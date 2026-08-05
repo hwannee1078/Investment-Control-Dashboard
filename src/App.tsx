@@ -4,6 +4,8 @@ import AppLayout from './components/AppLayout'
 import LoginPage from './features/auth/LoginPage'
 import { hasAuthenticatedSession } from './features/auth/authStore'
 import DashboardPage from './features/dashboard/DashboardPage'
+import InvestmentImportPage from './features/import/InvestmentImportPage'
+import ProjectManagePage from './features/manage/ProjectManagePage'
 import ProjectDetailPage from './features/projects/ProjectDetailPage'
 
 function ProtectedLayout() {
@@ -16,24 +18,6 @@ function ProtectedLayout() {
   )
 }
 
-function ManagePage() {
-  return (
-    <main className="page-shell empty-page">
-      <h1>사업 관리</h1>
-      <p>사업 등록과 수정 기능은 다음 단계에서 제공됩니다.</p>
-    </main>
-  )
-}
-
-function ImportPage() {
-  return (
-    <main className="page-shell empty-page">
-      <h1>투자비 가져오기</h1>
-      <p>투자비 파일 가져오기 기능은 다음 단계에서 제공됩니다.</p>
-    </main>
-  )
-}
-
 export default function App() {
   return (
     <Routes>
@@ -41,8 +25,8 @@ export default function App() {
       <Route element={<ProtectedLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
-        <Route path="/manage" element={<ManagePage />} />
-        <Route path="/import" element={<ImportPage />} />
+        <Route path="/manage" element={<ProjectManagePage />} />
+        <Route path="/import" element={<InvestmentImportPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

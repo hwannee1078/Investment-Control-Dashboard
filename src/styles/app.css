@@ -19,7 +19,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -538,6 +539,199 @@ tbody th {
   min-height: 60vh;
 }
 
+.management-panel,
+.import-preview,
+.import-upload-panel,
+.mapping-section {
+  padding: 30px;
+  border: 1px solid #e1e7ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgb(34 57 83 / 6%);
+}
+
+.management-panel .panel-heading,
+.import-preview .panel-heading {
+  margin-bottom: 24px;
+}
+
+.project-form {
+  display: grid;
+  gap: 24px;
+}
+
+.form-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.form-field-grid label,
+.file-picker {
+  display: grid;
+  gap: 8px;
+  color: #34435a;
+  font-weight: 700;
+}
+
+.form-field-grid input,
+.form-field-grid select,
+.schedule-editor input,
+.mapping-section select,
+.file-picker input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #cad3df;
+  border-radius: 9px;
+  color: #152034;
+  background: #fff;
+}
+
+.form-field-grid input:focus,
+.form-field-grid select:focus,
+.schedule-editor input:focus,
+.mapping-section select:focus,
+.file-picker input:focus {
+  border-color: #1686a1;
+  box-shadow: 0 0 0 3px rgb(22 134 161 / 14%);
+  outline: none;
+}
+
+.status-comparison {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  padding: 11px 15px;
+  border-radius: 10px;
+  background: #f3f7fa;
+}
+
+.status-comparison p,
+.import-upload-panel > p {
+  margin: 0;
+}
+
+.status-comparison > p:first-child {
+  color: #24556e;
+  font-weight: 700;
+}
+
+.status-warning {
+  color: #a42b35;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.schedule-editor {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.schedule-editor legend {
+  color: #102c49;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.schedule-editor input {
+  min-width: 155px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.form-actions .primary-button {
+  margin-top: 0;
+}
+
+.secondary-button {
+  padding: 13px 18px;
+  border: 1px solid #b8c4d0;
+  border-radius: 10px;
+  color: #30445a;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip: rect(0 0 0 0);
+  margin: -1px;
+  white-space: nowrap;
+}
+
+.import-upload-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.import-upload-panel h2,
+.preview-section h3 {
+  margin: 0;
+  color: #102c49;
+}
+
+.file-picker {
+  max-width: 540px;
+  padding: 22px;
+  border: 1px dashed #7aa6b6;
+  border-radius: 12px;
+  background: #f4fafb;
+}
+
+.success-message {
+  color: #16705d;
+  font-weight: 700;
+}
+
+.preview-section {
+  margin-top: 24px;
+}
+
+.preview-message-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.message-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-list li {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  color: #47576b;
+  background: #f4f7fa;
+  font-size: 0.85rem;
+}
+
+.error-list li {
+  color: #85323a;
+  background: #fff3f3;
+}
+
+.mapping-section {
+  margin-top: 22px;
+}
+
 @media (max-width: 800px) {
   .topbar {
     position: static;
@@ -567,7 +761,9 @@ tbody th {
 
   .metric-grid,
   .project-facts,
-  .investment-section {
+  .investment-section,
+  .form-field-grid,
+  .preview-message-grid {
     grid-template-columns: 1fr;
   }
 
@@ -599,7 +795,11 @@ tbody th {
   }
 
   .dashboard-panel,
-  .detail-panel {
+  .detail-panel,
+  .management-panel,
+  .import-preview,
+  .import-upload-panel,
+  .mapping-section {
     padding: 22px 18px;
   }
 
