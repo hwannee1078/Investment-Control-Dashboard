@@ -288,7 +288,8 @@ a {
 
 .business-list-table {
   width: 100%;
-  min-width: 1320px;
+  min-width: 0;
+  table-layout: fixed;
   border: 1px solid #e1e7ee;
   border-radius: 14px;
   border-spacing: 0;
@@ -297,15 +298,39 @@ a {
 
 .business-list-table th,
 .business-list-table td {
-  padding: 16px;
+  padding: 10px 6px;
   border-bottom: 1px solid #e8edf2;
-  vertical-align: top;
-  text-align: left;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.business-list-table th:nth-child(1) {
+  width: 18%;
+}
+
+.business-list-table th:nth-child(2) {
+  width: 6%;
+}
+
+.business-list-table th:nth-child(3),
+.business-list-table th:nth-child(4),
+.business-list-table th:nth-child(5),
+.business-list-table th:nth-child(6),
+.business-list-table th:nth-child(7) {
+  width: 9%;
+}
+
+.business-list-table th:nth-child(8) {
+  width: 31%;
 }
 
 .business-list-table tbody th[scope='row'] {
   color: #102c49;
   font-weight: 700;
+  text-align: center;
 }
 
 .business-list-table tbody tr:nth-child(4n + 1),
@@ -314,7 +339,7 @@ a {
 }
 
 .investment-summary-cell {
-  min-width: 190px;
+  min-width: 0;
 }
 
 .investment-summary-table {
@@ -325,9 +350,10 @@ a {
 
 .investment-summary-table > div {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 2px;
   align-items: baseline;
+  justify-items: center;
 }
 
 .investment-summary-table dt {
@@ -340,6 +366,7 @@ a {
   color: #102c49;
   font-weight: 800;
   white-space: nowrap;
+  font-size: 0.78rem;
 }
 
 .business-list-table thead th {
@@ -347,6 +374,12 @@ a {
   background: #f7fafc;
   font-size: 0.82rem;
   font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.business-list-panel .table-scroll {
+  overflow-x: visible;
 }
 
 .business-list-table tbody tr:last-child th,
@@ -361,7 +394,8 @@ a {
   background: transparent;
   font: inherit;
   font-weight: 800;
-  text-align: left;
+  text-align: center;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
