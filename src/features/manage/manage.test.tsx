@@ -125,4 +125,29 @@ describe('사업 관리', () => {
       '기전착공',
     )
   })
+
+  it('실적일이 모두 비어 있으면 수동 상태와 실적 없음의 불일치를 경고한다', () => {
+    const projectWithoutActuals: Project = {
+      ...project,
+      schedule: {
+        사업승인: { plan: '2026-01-10', actual: null },
+        토건착공: { plan: '2026-02-10', actual: null },
+        기전착공: { plan: null, actual: null },
+        '준공(시운전완료)': { plan: null, actual: null },
+        SOP: { plan: null, actual: null },
+      },
+    }
+    localStorage.setItem(
+      PROJECTS_STORAGE_KEY,
+      JSON.stringify([projectWithoutActuals]),
+    )
+    renderManagePage()
+
+    fireEvent.click(screen.getByRole('link', { name: '포항 테스트 사업 수정' }))
+
+    expect(screen.getByText('자동 단계: 실적 없음')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '수동 사업상태와 자동 단계가 일치하지 않습니다.',
+    )
+  })
 })

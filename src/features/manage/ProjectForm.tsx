@@ -131,7 +131,7 @@ export default function ProjectForm({
 
       <div className="status-comparison">
         <p>자동 단계: {derivedStatus ?? '실적 없음'}</p>
-        {derivedStatus !== null && derivedStatus !== project.status ? (
+        {derivedStatus !== project.status ? (
           <p className="status-warning" role="alert">
             수동 사업상태와 자동 단계가 일치하지 않습니다.
           </p>
