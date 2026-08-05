@@ -35,8 +35,9 @@ function actualReportFile(
   validationAmounts: number[],
 ): File {
   const rows: unknown[][] = Array.from({ length: 112 }, () => [])
-  rows[3] = [null, 'ORDER-REPORT', '프로젝트 보고서']
-  rows[13] = [null, '2026-03', monthlyActual]
+  rows[3] = [null, '오더/그룹 1006249 인조흑연음극재 신설', '프로젝트 보고서']
+  rows[4] = [null, '보고기간 2026-03']
+  rows[13] = [null, '무시할 값', monthlyActual]
   validationAmounts.forEach((amount, index) => {
     rows[14 + index][2] = amount
   })
@@ -171,7 +172,7 @@ describe('parseWorkbookFiles', () => {
       {
         sourceId: 'actual.xlsx',
         rowId: 'actual.xlsx:14',
-        orderId: 'ORDER-REPORT',
+        orderId: '1006249',
         month: '2026-03',
         amount: 450,
       },

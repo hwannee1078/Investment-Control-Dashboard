@@ -62,8 +62,9 @@ function workbookFile(name: string, data: Array<Record<string, unknown>>): File 
 
 function actualReportFile(name: string): File {
   const rows: unknown[][] = Array.from({ length: 112 }, () => [])
-  rows[3] = [null, 'ORDER-OLD', '프로젝트 보고서']
-  rows[13] = [null, '2026-03', 500]
+  rows[3] = [null, '오더/그룹 1006249 인조흑연음극재 신설', '프로젝트 보고서']
+  rows[4] = [null, '보고기간 2026-03']
+  rows[13] = [null, '무시할 값', 500]
   rows[14][2] = 200
   rows[15][2] = 250
   rows[108][1] = '* H,S'

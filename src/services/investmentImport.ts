@@ -124,6 +124,16 @@ function normalizeMonth(value: unknown, fromDateColumn: boolean): string | null 
   return null
 }
 
+function normalizeReportMonth(value: unknown): string | null {
+  const directMonth = normalizeMonth(value, true)
+  if (directMonth !== null) return directMonth
+
+  const match = /(\d{4})[-./](\d{1,2})(?:[-./]\d{1,2})?/.exec(
+    String(value ?? ''),
+  )
+  return match === null ? null : normalizeMonth(`${match[1]}-${match[2]}`, true)
+}
+
 async function readFile(file: File): Promise<ArrayBuffer> {
   if (typeof file.arrayBuffer === 'function') {
     return file.arrayBuffer()
@@ -174,16 +184,13 @@ export async function parseWorkbookFiles(files: File[]): Promise<ImportResult> {
           .sort((left, right) => left - right)[0] ?? -1
     const reportHeader = String(sheet?.B4?.v ?? '').trim()
     if (reportMarkerRow !== -1 && reportHeader !== '') {
-      let orderId = reportHeader
-      const [reportOrderId] = reportHeader.split(/\s*[|/]\s*/, 1)
-      if (reportOrderId !== undefined && reportOrderId !== '') {
-        orderId = reportOrderId.trim()
-      }
+      const orderNumber = /(?<!\d)\d{7}(?!\d)/.exec(reportHeader)?.[0]
+      let orderId = orderNumber ?? reportHeader
       if (orderId === '투자오더번호' || orderId === '오더번호') {
         orderId = String(sheet?.C4?.v ?? '').trim()
       }
 
-      const month = normalizeMonth(sheet?.B14?.v, true)
+      const month = normalizeReportMonth(sheet?.B5?.v) ?? normalizeReportMonth(sourceId)
       const amountValue = sheet?.C14?.v
       const rowId = `${sourceId}:14`
       let valid = true
