@@ -1,10 +1,11 @@
 import { Fragment, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { InvestmentRepository } from '../../data/investmentRepository'
 import { ProjectRepository } from '../../data/projectRepository'
 import type { Project } from '../../domain/project'
 import type { InvestmentSummary } from '../../domain/investment'
+import { SAMPLE_INVESTMENT_TRANSACTIONS } from '../../domain/sampleData'
 import { PROJECT_STAGES } from '../../domain/project'
 import { aggregateInvestment } from '../../services/investmentAggregation'
 import MaterialDonut from './MaterialDonut'
@@ -13,10 +14,14 @@ type Material = Project['material']
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [hoveredMaterial, setHoveredMaterial] = useState<Material | null>(null)
+  const sampleMode = new URLSearchParams(location.search).get('sample') === '1'
   const dashboard = useMemo(() => {
     const projects = new ProjectRepository().list()
-    const rows = new InvestmentRepository().listTransactions()
+    const rows = sampleMode
+      ? [...SAMPLE_INVESTMENT_TRANSACTIONS]
+      : new InvestmentRepository().listTransactions()
     const orderToProject = Object.fromEntries(
       projects.flatMap((project) => project.orderIds.map((orderId) => [orderId, project.id])),
     )
@@ -27,7 +32,7 @@ export default function DashboardPage() {
     }
 
     return { projects, projectsByMaterial, summaries }
-  }, [])
+  }, [sampleMode])
 
   const counts = {
     양극재: dashboard.projectsByMaterial.양극재.length,

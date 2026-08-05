@@ -110,4 +110,12 @@ describe('executive dashboard', () => {
       screen.getByRole('heading', { name: '포항 천연흑연 음극재 2공장' }),
     ).toBeInTheDocument()
   })
+
+  it('shows the linked sample investment data in sample mode', () => {
+    renderApp('/dashboard?sample=1')
+
+    expect(screen.getAllByText('누적투자비').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('11941.3').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('-84.7').length).toBeGreaterThan(0)
+  })
 })
