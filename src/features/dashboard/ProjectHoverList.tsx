@@ -12,7 +12,12 @@ export default function ProjectHoverList({
   onProjectSelect,
 }: ProjectHoverListProps) {
   return (
-    <div className="project-hover-list" aria-live="polite">
+    <div
+      className="project-hover-list"
+      aria-live="polite"
+      role="region"
+      aria-label={`${material} 사업 목록`}
+    >
       <p>{material} 사업</p>
       <ul>
         {projects.map((project) => (

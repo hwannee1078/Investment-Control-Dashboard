@@ -120,7 +120,8 @@ describe('투자비 대시보드 통합 사용자 흐름', () => {
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('link', { name: '대시보드' }))
-    expect(screen.getByText('350원')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '사업목록' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '포항 양극재 통합 사업' })).toBeInTheDocument()
     fireEvent.mouseEnter(screen.getByRole('button', { name: '양극재(2건)' }))
     fireEvent.click(
       screen.getByRole('button', { name: '포항 양극재 통합 사업 상세 보기' }),

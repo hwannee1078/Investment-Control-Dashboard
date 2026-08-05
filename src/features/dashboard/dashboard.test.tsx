@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import App from '../../App'
@@ -62,20 +62,31 @@ describe('executive dashboard', () => {
     sessionStorage.setItem(SESSION_KEY, 'true')
   })
 
-  it('shows the three investment metrics and only two material segments initially', () => {
+  it('shows material segments and the business schedule list without metric cards', () => {
     renderApp('/dashboard')
 
-    expect(screen.getByText('승인투자비')).toBeInTheDocument()
-    expect(screen.getByText('누적투자비')).toBeInTheDocument()
-    expect(screen.getByText('집행률(%)')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '사업목록' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '사업명' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '소재지' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '사업일정' })).toBeInTheDocument()
+    expect(screen.queryByText('승인투자비')).not.toBeInTheDocument()
+    expect(screen.queryByText('누적투자비')).not.toBeInTheDocument()
+    expect(screen.queryByText('집행률(%)')).not.toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: '소재' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: '사업상태' })).not.toBeInTheDocument()
+    expect(screen.getAllByText('사업승인').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('토건착공').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('기전착공').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('준공(시운전완료)').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('SOP').length).toBeGreaterThan(0)
     expect(
       screen.getByRole('button', { name: '양극재(2건)' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: '음극재(2건)' }),
     ).toBeInTheDocument()
-    expect(screen.queryByText('포항 양극재 1단계 증설')).not.toBeInTheDocument()
-    expect(screen.queryByText('세종 음극재 생산라인 증설')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '양극재 사업 목록' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '음극재 사업 목록' })).not.toBeInTheDocument()
   })
 
   it('reveals the hovered material projects and navigates on project click', () => {
@@ -83,9 +94,10 @@ describe('executive dashboard', () => {
 
     fireEvent.mouseEnter(screen.getByRole('button', { name: '음극재(2건)' }))
 
-    expect(screen.getByText('포항 천연흑연 음극재 2공장')).toBeInTheDocument()
-    expect(screen.getByText('세종 음극재 생산라인 증설')).toBeInTheDocument()
-    expect(screen.queryByText('광양 양극재 5단계 신설')).not.toBeInTheDocument()
+    const hoverList = screen.getByRole('region', { name: '음극재 사업 목록' })
+    expect(within(hoverList).getByText('포항 천연흑연 음극재 2공장')).toBeInTheDocument()
+    expect(within(hoverList).getByText('세종 음극재 생산라인 증설')).toBeInTheDocument()
+    expect(within(hoverList).queryByText('광양 양극재 5단계 신설')).not.toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole('button', { name: '포항 천연흑연 음극재 2공장 상세 보기' }),

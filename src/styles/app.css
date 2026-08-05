@@ -282,6 +282,60 @@ a {
   box-shadow: 0 12px 32px rgb(34 57 83 / 6%);
 }
 
+.business-list-panel {
+  margin-top: 24px;
+}
+
+.business-list-table {
+  width: 100%;
+  min-width: 960px;
+  border: 1px solid #e1e7ee;
+  border-radius: 14px;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.business-list-table th,
+.business-list-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e8edf2;
+  vertical-align: top;
+  text-align: left;
+}
+
+.business-list-table thead th {
+  color: #718094;
+  background: #f7fafc;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.business-list-table tbody tr:last-child th,
+.business-list-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.project-link {
+  padding: 0;
+  border: 0;
+  color: #102c49;
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-link:hover,
+.project-link:focus-visible {
+  color: #1f81b8;
+  text-decoration: underline;
+}
+
+.business-list-table .schedule-matrix {
+  min-width: 760px;
+}
+
 .panel-heading h2,
 .detail-panel h2 {
   margin: 0;
