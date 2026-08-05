@@ -130,7 +130,7 @@ function InvestmentSummaryCell({
   const cumulative = summary?.cumulativeTotal ?? 0
   const remaining = approvalBudget - cumulative
   const rate = approvalBudget > 0 ? (cumulative / approvalBudget) * 100 : null
-  const toBillionWon = (value: number) => `${(value / 100_000_000).toFixed(1)}억원`
+  const toBillionWon = (value: number) => (value / 100_000_000).toFixed(1)
 
   return (
     <td className="investment-summary-cell" rowSpan={2}>

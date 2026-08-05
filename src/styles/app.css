@@ -298,12 +298,13 @@ a {
 
 .business-list-table th,
 .business-list-table td {
-  padding: 7px 5px;
+  height: 38px;
+  padding: 5px 4px;
   border-bottom: 1px solid #e8edf2;
   vertical-align: middle;
   text-align: center;
-  font-size: 0.78rem;
-  line-height: 1.2;
+  font-size: 0.75rem;
+  line-height: 1.15;
   overflow-wrap: anywhere;
 }
 
@@ -353,7 +354,8 @@ a {
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: center;
-  padding: 5px 2px;
+  min-height: 24px;
+  padding: 3px 2px;
   border-bottom: 1px solid #e2e8ef;
   text-align: center;
   line-height: 1.15;
@@ -375,6 +377,7 @@ a {
 }
 
 .business-list-table thead th {
+  height: 42px;
   color: #718094;
   background: #f7fafc;
   font-size: 0.82rem;
