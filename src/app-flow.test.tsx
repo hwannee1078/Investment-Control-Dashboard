@@ -24,6 +24,7 @@ describe('투자비 대시보드 통합 사용자 흐름', () => {
   beforeEach(() => {
     localStorage.clear()
     localStorage.setItem(TRANSACTIONS_STORAGE_KEY, '[]')
+    localStorage.setItem('investment-dashboard.sample-transactions-seeded.v1', 'true')
     sessionStorage.clear()
   })
 
