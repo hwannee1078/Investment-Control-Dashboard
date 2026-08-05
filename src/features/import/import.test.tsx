@@ -60,6 +60,20 @@ function workbookFile(name: string, data: Array<Record<string, unknown>>): File 
   return { name, arrayBuffer: async () => bytes } as File
 }
 
+function actualReportFile(name: string): File {
+  const rows: unknown[][] = Array.from({ length: 112 }, () => [])
+  rows[3] = [null, 'ORDER-OLD', '프로젝트 보고서']
+  rows[13] = [null, '2026-03', 500]
+  rows[14][2] = 200
+  rows[15][2] = 250
+  rows[108][1] = '* H,S'
+
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), '투자비')
+  const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+  return { name, arrayBuffer: async () => bytes } as File
+}
+
 const firstFile = workbookFile('첫번째.xlsx', [
   { 투자오더번호: 'ORDER-OLD', 기준월: '2026-01', 투자금액: 100 },
   { 투자오더번호: 'ORDER-NEW', 기준월: '2026-02', 투자금액: 200 },
@@ -192,6 +206,16 @@ describe('투자비 가져오기', () => {
       ...projects[1],
       orderIds: ['ORDER-NEW'],
     })
+  })
+
+  it('실제 보고서 합계 불일치 경고를 미리보기에서 확인할 수 있다', async () => {
+    renderImportPage()
+    await selectFiles([actualReportFile('실제보고서.xlsx')])
+
+    const warningRegion = screen.getByRole('region', { name: '검증 경고' })
+    expect(warningRegion).toHaveTextContent('C14: 500')
+    expect(warningRegion).toHaveTextContent('C15:C108: 450')
+    expect(warningRegion).toHaveTextContent('차이: 50')
   })
 
   it('미리보기를 취소하면 어떤 저장소도 변경하지 않는다', async () => {

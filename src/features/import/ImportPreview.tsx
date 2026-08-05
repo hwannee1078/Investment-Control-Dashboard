@@ -90,6 +90,22 @@ export default function ImportPreview({
             </ul>
           )}
         </section>
+
+        <section className="preview-section" aria-label="검증 경고">
+          <h3>검증 경고 ({result.warnings.length})</h3>
+          {result.warnings.length === 0 ? (
+            <p className="empty-state">검증 경고가 없습니다.</p>
+          ) : (
+            <ul className="message-list warning-list">
+              {result.warnings.map((warning, index) => (
+                <li key={`${warning.sourceId}-${warning.code}-${index}`}>
+                  <strong>{warning.sourceId}</strong>
+                  <span>{warning.message}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       <div className="form-actions">

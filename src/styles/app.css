@@ -728,6 +728,11 @@ tbody th {
   background: #fff3f3;
 }
 
+.warning-list li {
+  color: #7b5c1d;
+  background: #fff8e7;
+}
+
 .mapping-section {
   margin-top: 22px;
 }

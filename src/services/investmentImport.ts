@@ -20,10 +20,17 @@ export type DuplicateRow = {
   duplicateOfRowId: string
 }
 
+export type ImportWarning = {
+  sourceId: string
+  code: 'MONTHLY_TOTAL_MISMATCH'
+  message: string
+}
+
 export type ImportResult = {
   rows: InvestmentTransaction[]
   errors: ImportError[]
   duplicates: DuplicateRow[]
+  warnings: ImportWarning[]
 }
 
 const ORDER_HEADER = '투자오더번호'
@@ -134,6 +141,7 @@ export async function parseWorkbookFiles(files: File[]): Promise<ImportResult> {
   const rows: InvestmentTransaction[] = []
   const errors: ImportError[] = []
   const duplicates: DuplicateRow[] = []
+  const warnings: ImportWarning[] = []
   const firstRowIdByContent = new Map<string, string>()
 
   for (const file of files) {
@@ -152,6 +160,88 @@ export async function parseWorkbookFiles(files: File[]): Promise<ImportResult> {
           defval: null,
         }) as unknown[][])
     const headers = (values[0] ?? []).map(normalizeHeader)
+
+    const reportMarkerRow = sheet === undefined
+      ? -1
+      : Object.keys(sheet)
+          .map((address) => /^B(\d+)$/.exec(address))
+          .filter((match): match is RegExpExecArray => match !== null)
+          .map((match) => Number(match[1]))
+          .filter((rowNumber) =>
+            rowNumber >= 109 &&
+            String(sheet[`B${rowNumber}`]?.v ?? '').replace(/\s+/g, '') === '*H,S',
+          )
+          .sort((left, right) => left - right)[0] ?? -1
+    const reportHeader = String(sheet?.B4?.v ?? '').trim()
+    if (reportMarkerRow !== -1 && reportHeader !== '') {
+      let orderId = reportHeader
+      const [reportOrderId] = reportHeader.split(/\s*[|/]\s*/, 1)
+      if (reportOrderId !== undefined && reportOrderId !== '') {
+        orderId = reportOrderId.trim()
+      }
+      if (orderId === '투자오더번호' || orderId === '오더번호') {
+        orderId = String(sheet?.C4?.v ?? '').trim()
+      }
+
+      const month = normalizeMonth(sheet?.B14?.v, true)
+      const amountValue = sheet?.C14?.v
+      const rowId = `${sourceId}:14`
+      let valid = true
+
+      if (orderId === '') {
+        errors.push({
+          sourceId,
+          rowId,
+          code: 'UNMAPPED_ORDER',
+          message: '투자오더번호 값이 없습니다.',
+        })
+        valid = false
+      }
+      if (typeof amountValue !== 'number' || !Number.isFinite(amountValue)) {
+        errors.push({
+          sourceId,
+          rowId,
+          code: 'INVALID_AMOUNT',
+          message: `투자금액이 숫자가 아닙니다: ${String(amountValue ?? '')}`,
+        })
+        valid = false
+      }
+      if (month === null) {
+        errors.push({
+          sourceId,
+          rowId,
+          code: 'INVALID_MONTH',
+          message: `기준월 또는 투자일이 올바르지 않습니다: ${String(sheet?.B14?.v ?? '')}`,
+        })
+        valid = false
+      }
+
+      let validationTotal = 0
+      for (let rowNumber = 15; rowNumber < reportMarkerRow; rowNumber += 1) {
+        const value = sheet?.[`C${rowNumber}`]?.v
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          validationTotal += value
+        }
+      }
+      if (
+        typeof amountValue === 'number' &&
+        Number.isFinite(amountValue) &&
+        amountValue !== validationTotal
+      ) {
+        const difference = amountValue - validationTotal
+        warnings.push({
+          sourceId,
+          code: 'MONTHLY_TOTAL_MISMATCH',
+          message: `월별 실적(C14: ${amountValue})과 검증 합계(C15:C108: ${validationTotal})가 일치하지 않습니다. 차이: ${difference}`,
+        })
+      }
+
+      if (valid && month !== null && typeof amountValue === 'number') {
+        rows.push({ sourceId, rowId, orderId, month, amount: amountValue })
+      }
+      continue
+    }
+
     const headerErrors = validateWorkbookHeaders(headers).map((error) => ({
       ...error,
       sourceId,
@@ -227,5 +317,5 @@ export async function parseWorkbookFiles(files: File[]): Promise<ImportResult> {
     }
   }
 
-  return { rows, errors, duplicates }
+  return { rows, errors, duplicates, warnings }
 }

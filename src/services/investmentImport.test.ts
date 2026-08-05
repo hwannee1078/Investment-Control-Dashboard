@@ -29,6 +29,31 @@ function workbookFile(
   } as File
 }
 
+function actualReportFile(
+  name: string,
+  monthlyActual: number,
+  validationAmounts: number[],
+): File {
+  const rows: unknown[][] = Array.from({ length: 112 }, () => [])
+  rows[3] = [null, 'ORDER-REPORT', '프로젝트 보고서']
+  rows[13] = [null, '2026-03', monthlyActual]
+  validationAmounts.forEach((amount, index) => {
+    rows[14 + index][2] = amount
+  })
+  rows[108][1] = '* H,S'
+  rows[109][2] = 999_999
+
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet(rows),
+    '투자비',
+  )
+  const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+
+  return { name, arrayBuffer: async () => bytes } as File
+}
+
 describe('validateWorkbookHeaders', () => {
   it('투자오더번호, 월/일자, 투자금액 중 누락된 필수 열을 모두 보고한다', () => {
     const errors = validateWorkbookHeaders([' 투자오더번호 '])
@@ -134,6 +159,39 @@ describe('parseWorkbookFiles', () => {
     expect(result.errors.map(({ code }) => code)).toEqual([
       'MISSING_HEADER',
       'MISSING_HEADER',
+    ])
+  })
+
+  it('실제 보고서 형식은 B4 오더와 C14 월별실적을 사용하고 B109 마커 앞의 C열만 검증한다', async () => {
+    const result = await parseWorkbookFiles([
+      actualReportFile('actual.xlsx', 450, [200, 250]),
+    ])
+
+    expect(result.rows).toEqual([
+      {
+        sourceId: 'actual.xlsx',
+        rowId: 'actual.xlsx:14',
+        orderId: 'ORDER-REPORT',
+        month: '2026-03',
+        amount: 450,
+      },
+    ])
+    expect(result.warnings).toEqual([])
+  })
+
+  it('실제 보고서의 C14와 C15:C108 합계가 다르면 업로드용 경고만 반환한다', async () => {
+    const result = await parseWorkbookFiles([
+      actualReportFile('mismatch.xlsx', 500, [200, 250]),
+    ])
+
+    expect(result.rows[0]?.amount).toBe(500)
+    expect(result.errors).toEqual([])
+    expect(result.warnings).toEqual([
+      {
+        sourceId: 'mismatch.xlsx',
+        code: 'MONTHLY_TOTAL_MISMATCH',
+        message: '월별 실적(C14: 500)과 검증 합계(C15:C108: 450)가 일치하지 않습니다. 차이: 50',
+      },
     ])
   })
 })
