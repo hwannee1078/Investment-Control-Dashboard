@@ -288,7 +288,7 @@ a {
 
 .business-list-table {
   width: 100%;
-  min-width: 960px;
+  min-width: 1320px;
   border: 1px solid #e1e7ee;
   border-radius: 14px;
   border-spacing: 0;
@@ -301,6 +301,45 @@ a {
   border-bottom: 1px solid #e8edf2;
   vertical-align: top;
   text-align: left;
+}
+
+.business-list-table tbody th[scope='row'] {
+  color: #102c49;
+  font-weight: 700;
+}
+
+.business-list-table tbody tr:nth-child(4n + 1),
+.business-list-table tbody tr:nth-child(4n + 2) {
+  background: #fcfdff;
+}
+
+.investment-summary-cell {
+  min-width: 190px;
+}
+
+.investment-summary-table {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.investment-summary-table > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.investment-summary-table dt {
+  color: #718094;
+  font-size: 0.78rem;
+}
+
+.investment-summary-table dd {
+  margin: 0;
+  color: #102c49;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .business-list-table thead th {
@@ -332,9 +371,6 @@ a {
   text-decoration: underline;
 }
 
-.business-list-table .schedule-matrix {
-  min-width: 760px;
-}
 
 .panel-heading h2,
 .detail-panel h2 {
