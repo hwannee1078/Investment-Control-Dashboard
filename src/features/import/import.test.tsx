@@ -68,6 +68,12 @@ const secondFile = workbookFile('두번째.xlsx', [
   { 투자오더번호: 'ORDER-OLD', 기준월: '2026-01', 투자금액: 100 },
   { 투자오더번호: 'ORDER-BAD', 기준월: '2026-03', 투자금액: '오류' },
 ])
+const partialFile = workbookFile('부분.xlsx', [
+  { 투자오더번호: 'ORDER-OLD', 기준월: '2026-04', 투자금액: 75 },
+])
+const invalidFile = workbookFile('무효.xlsx', [
+  { 투자오더번호: 'ORDER-BAD', 기준월: '2026-04', 투자금액: '오류' },
+])
 
 function renderImportPage() {
   render(
@@ -77,11 +83,15 @@ function renderImportPage() {
   )
 }
 
-async function selectImportFiles() {
+async function selectFiles(files: File[]) {
   fireEvent.change(screen.getByLabelText('엑셀 파일'), {
-    target: { files: [firstFile, secondFile] },
+    target: { files },
   })
   await screen.findByRole('heading', { name: '가져오기 미리보기' })
+}
+
+async function selectImportFiles() {
+  await selectFiles([firstFile, secondFile])
 }
 
 describe('투자비 가져오기', () => {
@@ -150,6 +160,13 @@ describe('투자비 가져오기', () => {
     })
     expect(new InvestmentRepository(localStorage).listTransactions()).toEqual([
       {
+        sourceId: '기존.xlsx',
+        rowId: '기존.xlsx:2',
+        orderId: 'ORDER-OLD',
+        month: '2025-12',
+        amount: 50,
+      },
+      {
         sourceId: '첫번째.xlsx',
         rowId: '첫번째.xlsx:2',
         orderId: 'ORDER-OLD',
@@ -187,5 +204,87 @@ describe('투자비 가져오기', () => {
     expect(new InvestmentRepository(localStorage).listTransactions()).toHaveLength(1)
     expect(localStorage.getItem(ORDER_MAPPINGS_STORAGE_KEY)).toBeNull()
     expect(new ProjectRepository(localStorage).list()).toEqual(projects)
+  })
+
+  it('부분 가져오기는 기존 거래와 새 유효 거래를 함께 보존한다', async () => {
+    localStorage.setItem(
+      ORDER_MAPPINGS_STORAGE_KEY,
+      JSON.stringify({ 'ORDER-LEGACY': 'project-b' }),
+    )
+    renderImportPage()
+    await selectFiles([partialFile])
+
+    fireEvent.click(screen.getByRole('button', { name: '가져오기 확정' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('투자비 가져오기가 완료되었습니다.')).toBeInTheDocument()
+    })
+    expect(new InvestmentRepository(localStorage).listTransactions()).toEqual([
+      {
+        sourceId: '기존.xlsx',
+        rowId: '기존.xlsx:2',
+        orderId: 'ORDER-OLD',
+        month: '2025-12',
+        amount: 50,
+      },
+      {
+        sourceId: '부분.xlsx',
+        rowId: '부분.xlsx:2',
+        orderId: 'ORDER-OLD',
+        month: '2026-04',
+        amount: 75,
+      },
+    ])
+    expect(JSON.parse(localStorage.getItem(ORDER_MAPPINGS_STORAGE_KEY) ?? '{}')).toEqual({
+      'ORDER-LEGACY': 'project-b',
+      'ORDER-OLD': 'project-a',
+    })
+  })
+
+  it('유효하게 연결된 행이 없으면 저장하지 않고 미리보기를 유지한다', async () => {
+    renderImportPage()
+    await selectFiles([invalidFile])
+
+    fireEvent.click(screen.getByRole('button', { name: '가져오기 확정' }))
+
+    expect(screen.getByRole('heading', { name: '가져오기 미리보기' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '유효하게 연결된 행이 하나 이상 필요합니다.',
+    )
+    expect(screen.queryByText('투자비 가져오기가 완료되었습니다.')).not.toBeInTheDocument()
+    expect(new InvestmentRepository(localStorage).listTransactions()).toHaveLength(1)
+    expect(localStorage.getItem(ORDER_MAPPINGS_STORAGE_KEY)).toBeNull()
+  })
+
+  it('같은 sourceId와 rowId의 새 행은 기존 거래와 중복 저장하지 않는다', async () => {
+    localStorage.setItem(
+      TRANSACTIONS_STORAGE_KEY,
+      JSON.stringify([
+        {
+          sourceId: '부분.xlsx',
+          rowId: '부분.xlsx:2',
+          orderId: 'ORDER-OLD',
+          month: '2026-04',
+          amount: 75,
+        },
+      ]),
+    )
+    renderImportPage()
+    await selectFiles([partialFile])
+
+    fireEvent.click(screen.getByRole('button', { name: '가져오기 확정' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('투자비 가져오기가 완료되었습니다.')).toBeInTheDocument()
+    })
+    expect(new InvestmentRepository(localStorage).listTransactions()).toEqual([
+      {
+        sourceId: '부분.xlsx',
+        rowId: '부분.xlsx:2',
+        orderId: 'ORDER-OLD',
+        month: '2026-04',
+        amount: 75,
+      },
+    ])
   })
 })

@@ -1,6 +1,9 @@
 import { useMemo, useState, type ChangeEvent } from 'react'
 
-import { InvestmentRepository } from '../../data/investmentRepository'
+import {
+  InvestmentRepository,
+  ORDER_MAPPINGS_STORAGE_KEY,
+} from '../../data/investmentRepository'
 import { ProjectRepository } from '../../data/projectRepository'
 import type { Project } from '../../domain/project'
 import {
@@ -18,16 +21,31 @@ function mappingsFromProjects(projects: Project[]): Record<string, string> {
   )
 }
 
+function mappingsFromStorage(storage: Storage = localStorage): Record<string, string> {
+  const raw = storage.getItem(ORDER_MAPPINGS_STORAGE_KEY)
+  if (raw === null) return {}
+
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    return parsed !== null && typeof parsed === 'object'
+      ? (parsed as Record<string, string>)
+      : {}
+  } catch {
+    return {}
+  }
+}
+
 export default function InvestmentImportPage() {
   const projectRepository = useMemo(() => new ProjectRepository(), [])
   const investmentRepository = useMemo(() => new InvestmentRepository(), [])
   const [projects] = useState(() => projectRepository.list())
   const [result, setResult] = useState<ImportResult | null>(null)
   const [orderMappings, setOrderMappings] = useState(() =>
-    mappingsFromProjects(projects),
+    ({ ...mappingsFromProjects(projects), ...mappingsFromStorage() }),
   )
   const [isReading, setIsReading] = useState(false)
   const [readError, setReadError] = useState('')
+  const [confirmError, setConfirmError] = useState('')
   const [completed, setCompleted] = useState(false)
 
   const projectIds = useMemo(
@@ -48,6 +66,7 @@ export default function InvestmentImportPage() {
 
     setCompleted(false)
     setReadError('')
+    setConfirmError('')
     setIsReading(true)
     try {
       setResult(await parseWorkbookFiles(files))
@@ -66,18 +85,33 @@ export default function InvestmentImportPage() {
   function confirmImport() {
     if (result === null) return
 
+    const existingMappings = mappingsFromStorage()
+    const combinedMappings = { ...existingMappings, ...orderMappings }
     const validMappings = Object.fromEntries(
-      Object.entries(orderMappings).filter(([, projectId]) => projectIds.has(projectId)),
+      Object.entries(combinedMappings).filter(([, projectId]) => projectIds.has(projectId)),
     )
     const mappedRows = result.rows.filter(
       ({ orderId }) => validMappings[orderId] !== undefined,
     )
 
-    investmentRepository.replaceTransactions(mappedRows)
-    investmentRepository.replaceOrderMappings(validMappings)
+    if (mappedRows.length === 0) {
+      setConfirmError('유효하게 연결된 행이 하나 이상 필요합니다.')
+      return
+    }
+
+    const mergedTransactions = new Map<string, (typeof mappedRows)[number]>()
+    for (const row of [...investmentRepository.listTransactions(), ...mappedRows]) {
+      const identity = `${row.sourceId}\u0000${row.rowId}`
+      if (!mergedTransactions.has(identity)) {
+        mergedTransactions.set(identity, row)
+      }
+    }
+
+    investmentRepository.replaceTransactions([...mergedTransactions.values()])
+    investmentRepository.replaceOrderMappings(combinedMappings)
 
     for (const project of projects) {
-      const mappedOrderIds = Object.entries(validMappings)
+      const mappedOrderIds = Object.entries(combinedMappings)
         .filter(([, projectId]) => projectId === project.id)
         .map(([orderId]) => orderId)
       const nextOrderIds = [...new Set([...project.orderIds, ...mappedOrderIds])]
@@ -87,12 +121,14 @@ export default function InvestmentImportPage() {
     }
 
     setResult(null)
+    setConfirmError('')
     setCompleted(true)
   }
 
   function cancelPreview() {
     setResult(null)
-    setOrderMappings(mappingsFromProjects(projects))
+    setOrderMappings({ ...mappingsFromProjects(projects), ...mappingsFromStorage() })
+    setConfirmError('')
   }
 
   return (
@@ -133,6 +169,11 @@ export default function InvestmentImportPage() {
             onConfirm={confirmImport}
             onCancel={cancelPreview}
           />
+          {confirmError !== '' ? (
+            <p className="status-warning" role="alert">
+              {confirmError}
+            </p>
+          ) : null}
           <OrderMappingTable
             orders={unmappedOrders}
             projects={projects}
