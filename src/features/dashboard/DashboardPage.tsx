@@ -134,13 +134,11 @@ function InvestmentSummaryCell({
 
   return (
     <td className="investment-summary-cell" rowSpan={2}>
-      <div className="investment-summary-grid" role="group" aria-label="투자비 현황">
-        <div className="investment-summary-grid__header">항목</div>
-        <div className="investment-summary-grid__header">금액(억원)</div>
-        <div>승인투자비</div><div>{toBillionWon(approvalBudget)}</div>
-        <div>누적투자비</div><div>{toBillionWon(cumulative)}</div>
-        <div>잔여투자비</div><div>{toBillionWon(remaining)}</div>
-        <div>누적률</div><div>{rate === null ? '-' : `${rate.toFixed(1)}%`}</div>
+      <div className="investment-summary-list" role="group" aria-label="투자비 현황">
+        <div><span>승인투자비</span><strong>{toBillionWon(approvalBudget)}</strong></div>
+        <div><span>누적투자비</span><strong>{toBillionWon(cumulative)}</strong></div>
+        <div><span>잔여투자비</span><strong>{toBillionWon(remaining)}</strong></div>
+        <div><span>누적률</span><strong>{rate === null ? '-' : `${rate.toFixed(1)}%`}</strong></div>
       </div>
     </td>
   )
