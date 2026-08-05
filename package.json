@@ -10,9 +10,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",
@@ -23,7 +20,10 @@
     "@testing-library/react": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
     "jsdom": "latest",
+    "typescript": "latest",
+    "vite": "latest",
     "vitest": "latest"
   }
 }

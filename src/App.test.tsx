@@ -12,7 +12,22 @@ describe('App', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: '?ъ옄鍮???쒕낫??' }),
+      screen.getByRole('heading', { name: '투자비 대시보드' }),
     ).toBeInTheDocument()
   })
+
+  it.each(['/', '/not-a-route'])(
+    'redirects %s to login and shows the login heading',
+    (path) => {
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>,
+      )
+
+      expect(
+        screen.getByRole('heading', { name: '투자비 대시보드' }),
+      ).toBeInTheDocument()
+    },
+  )
 })

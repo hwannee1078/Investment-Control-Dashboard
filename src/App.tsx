@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 function LoginPage() {
-  return <h1>?ъ옄鍮???쒕낫??</h1>
+  return <h1>투자비 대시보드</h1>
 }
 
 function DashboardPage() {
