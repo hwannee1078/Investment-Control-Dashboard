@@ -81,6 +81,7 @@ describe('executive dashboard', () => {
     expect(screen.getAllByText('기전착공').length).toBeGreaterThan(0)
     expect(screen.getAllByText('준공(시운전완료)').length).toBeGreaterThan(0)
     expect(screen.getAllByText('SOP').length).toBeGreaterThan(0)
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0)
     expect(
       screen.getByRole('button', { name: '양극재(2건)' }),
     ).toBeInTheDocument()

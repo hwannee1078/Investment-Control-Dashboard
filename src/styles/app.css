@@ -767,6 +767,12 @@ tbody th {
   font-weight: 700;
 }
 
+.form-help {
+  margin: 0 0 12px;
+  color: #718094;
+  font-size: 0.82rem;
+}
+
 .schedule-editor input {
   min-width: 155px;
 }

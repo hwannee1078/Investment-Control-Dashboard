@@ -139,7 +139,8 @@ export default function ProjectForm({
       </div>
 
       <fieldset className="schedule-editor">
-        <legend>주요 일정</legend>
+        <legend>주요 일정 (관리자 입력)</legend>
+        <p className="form-help">각 날짜 칸을 누르면 달력에서 계획일과 실적일을 선택할 수 있습니다.</p>
         <div className="table-scroll">
           <table aria-label="사업 일정 입력">
             <thead>
@@ -160,6 +161,7 @@ export default function ProjectForm({
                     <input
                       id={`${stage}-plan`}
                       type="date"
+                      title="달력에서 계획일 선택"
                       value={project.schedule[stage].plan ?? ''}
                       onChange={(event) => updateSchedule(stage, 'plan', event.target.value)}
                     />
@@ -171,6 +173,7 @@ export default function ProjectForm({
                     <input
                       id={`${stage}-actual`}
                       type="date"
+                      title="달력에서 실적일 선택"
                       value={project.schedule[stage].actual ?? ''}
                       onChange={(event) =>
                         updateSchedule(stage, 'actual', event.target.value)
