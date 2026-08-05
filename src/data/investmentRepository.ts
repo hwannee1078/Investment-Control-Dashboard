@@ -1,4 +1,5 @@
 import type { InvestmentTransaction } from '../domain/investment'
+import { SAMPLE_INVESTMENT_TRANSACTIONS } from '../domain/sampleData'
 
 export const TRANSACTIONS_STORAGE_KEY = 'investment-dashboard.transactions.v1'
 export const ORDER_MAPPINGS_STORAGE_KEY = 'investment-dashboard.order-mappings.v1'
@@ -12,7 +13,10 @@ export class InvestmentRepository {
 
   listTransactions(): InvestmentTransaction[] {
     const storedRows = this.storage.getItem(TRANSACTIONS_STORAGE_KEY)
-    return storedRows === null ? [] : (JSON.parse(storedRows) as InvestmentTransaction[])
+    if (storedRows === null) {
+      return [...SAMPLE_INVESTMENT_TRANSACTIONS]
+    }
+    return JSON.parse(storedRows) as InvestmentTransaction[]
   }
 
   replaceOrderMappings(mapping: Record<string, string>): void {

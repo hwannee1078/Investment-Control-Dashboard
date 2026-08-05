@@ -9,7 +9,7 @@ export const SAMPLE_PROJECTS: Project[] = [
     status: '기전착공',
     schedule: createEmptySchedule(),
     approvalBudget: 850_000_000_000,
-    orderIds: [],
+    orderIds: ['1001234', '1001235'],
   },
   {
     id: 'project-gwangyang-cathode-5',
@@ -19,7 +19,7 @@ export const SAMPLE_PROJECTS: Project[] = [
     status: '토건착공',
     schedule: createEmptySchedule(),
     approvalBudget: 1_240_000_000_000,
-    orderIds: [],
+    orderIds: ['1002345', '1002346'],
   },
   {
     id: 'project-pohang-anode-2',
@@ -29,7 +29,7 @@ export const SAMPLE_PROJECTS: Project[] = [
     status: '사업승인',
     schedule: createEmptySchedule(),
     approvalBudget: 420_000_000_000,
-    orderIds: [],
+    orderIds: ['1006249', '1007183'],
   },
   {
     id: 'project-sejong-anode-expansion',
@@ -39,6 +39,25 @@ export const SAMPLE_PROJECTS: Project[] = [
     status: 'SOP',
     schedule: createEmptySchedule(),
     approvalBudget: 310_000_000_000,
-    orderIds: [],
+    orderIds: ['1006464', '1006868'],
   },
 ]
+
+export const SAMPLE_INVESTMENT_TRANSACTIONS = [
+  { sourceId: '6월 공구와 기비(1001234).xlsx', rowId: '14', orderId: '1001234', month: '2026-06', amount: 800_688_918_107 },
+  { sourceId: '6월 공구와 기비(1001235).xlsx', rowId: '14', orderId: '1001235', month: '2026-06', amount: 261_949_581 },
+  { sourceId: '7월 공구와 기비(1001234).xlsx', rowId: '14', orderId: '1001234', month: '2026-07', amount: 347_421_900_486 },
+  { sourceId: '7월 공구와 기비(1001235).xlsx', rowId: '14', orderId: '1001235', month: '2026-07', amount: 45_755_194_783 },
+  { sourceId: '6월 공구와 기비(1002345).xlsx', rowId: '14', orderId: '1002345', month: '2026-06', amount: 800_688_918_107 },
+  { sourceId: '6월 공구와 기비(1002346).xlsx', rowId: '14', orderId: '1002346', month: '2026-06', amount: 261_949_581 },
+  { sourceId: '7월 공구와 기비(1002345).xlsx', rowId: '14', orderId: '1002345', month: '2026-07', amount: 347_421_900_486 },
+  { sourceId: '7월 공구와 기비(1002346).xlsx', rowId: '14', orderId: '1002346', month: '2026-07', amount: 45_755_194_783 },
+  { sourceId: '6월 공구와 기비(1006249).xlsx', rowId: '14', orderId: '1006249', month: '2026-06', amount: 372_580_873 },
+  { sourceId: '6월 공구와 기비(1007183).xlsx', rowId: '14', orderId: '1007183', month: '2026-06', amount: 124_193_624.33333333 },
+  { sourceId: '7월 공구와 기비(1006249).xlsx', rowId: '14', orderId: '1006249', month: '2026-07', amount: -2_988_905_999.5 },
+  { sourceId: '7월 공구와 기비(1007183).xlsx', rowId: '14', orderId: '1007183', month: '2026-07', amount: -5_977_811_999 },
+  { sourceId: '6월 공구와 기비(1006464).xlsx', rowId: '14', orderId: '1006464', month: '2026-06', amount: 124_193_624.33333333 },
+  { sourceId: '6월 공구와 기비(1006868).xlsx', rowId: '14', orderId: '1006868', month: '2026-06', amount: 372_580_873 },
+  { sourceId: '7월 공구와 기비(1006464).xlsx', rowId: '14', orderId: '1006464', month: '2026-07', amount: -5_977_811_999 },
+  { sourceId: '7월 공구와 기비(1006868).xlsx', rowId: '14', orderId: '1006868', month: '2026-07', amount: -2_988_905_999.5 },
+] as const

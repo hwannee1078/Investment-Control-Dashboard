@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 
 import App from './App'
+import { TRANSACTIONS_STORAGE_KEY } from './data/investmentRepository'
 
 function workbookFile(
   name: string,
@@ -22,6 +23,7 @@ function workbookFile(
 describe('투자비 대시보드 통합 사용자 흐름', () => {
   beforeEach(() => {
     localStorage.clear()
+    localStorage.setItem(TRANSACTIONS_STORAGE_KEY, '[]')
     sessionStorage.clear()
   })
 
