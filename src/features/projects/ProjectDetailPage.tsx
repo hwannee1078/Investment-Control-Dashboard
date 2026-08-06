@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import MetricCard from '../../components/MetricCard'
@@ -20,6 +20,7 @@ const EMPTY_SUMMARY: InvestmentSummaryValue = {
 
 export default function ProjectDetailPage() {
   const { projectId = '' } = useParams()
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
   const detail = useMemo(() => {
     const projects = new ProjectRepository().list()
     const project = projects.find(({ id }) => id === projectId)
@@ -111,13 +112,16 @@ export default function ProjectDetailPage() {
               const actual = summary.monthly[month] ?? 0
               const max = Math.max(1, ...chartMonths.map((item) => Math.max(Math.abs(project.rollingPlan?.[item]?.amount ?? 0), Math.abs(summary.monthly[item] ?? 0))))
               const reason = project.rollingPlan?.[month]?.reason
-              return <button key={month} type="button" className="rolling-bar-group" title={reason ?? '차이 사유가 입력되지 않았습니다.'}>
+              return <button key={month} type="button" className="rolling-bar-group" title="클릭하여 차이 사유 확인" onClick={() => setSelectedMonth(month)}>
                 <span className="rolling-month">{month}</span>
                 <span className="rolling-bars"><i className="rolling-bar rolling-bar--plan" style={{ height: `${Math.max(2, Math.abs(plan) / max * 100)}%` }} /><i className="rolling-bar rolling-bar--actual" style={{ height: `${Math.max(2, Math.abs(actual) / max * 100)}%` }} /></span>
                 <small>계획 {Math.round(plan / 100000000)} / 실적 {Math.round(actual / 100000000)}억원</small>
               </button>
             })}
           </div>
+        )}
+        {selectedMonth !== null && (
+          <p className="rolling-reason"><strong>{selectedMonth} 차이 사유:</strong> {project.rollingPlan?.[selectedMonth]?.reason ?? '입력된 사유가 없습니다.'}</p>
         )}
       </section>
     </main>

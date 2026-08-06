@@ -866,6 +866,15 @@ tbody th {
 .rolling-bar-group:hover .rolling-bar--actual,
 .rolling-bar-group:focus-visible .rolling-bar--actual { background: #0d6f77; }
 
+.rolling-reason {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #47576b;
+  background: #f4f7fa;
+  font-size: 0.85rem;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
