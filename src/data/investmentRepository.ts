@@ -15,9 +15,9 @@ export class InvestmentRepository {
   listTransactions(): InvestmentTransaction[] {
     const storedRows = this.storage.getItem(TRANSACTIONS_STORAGE_KEY)
     if (storedRows === null) {
-      return import.meta.env.PROD ? [] : [...SAMPLE_INVESTMENT_TRANSACTIONS]
+      return [...SAMPLE_INVESTMENT_TRANSACTIONS]
     }
-    if (!import.meta.env.PROD && storedRows === '[]' && this.storage.getItem(SAMPLE_SEEDED_KEY) !== 'true') {
+    if (storedRows === '[]' && this.storage.getItem(SAMPLE_SEEDED_KEY) !== 'true') {
       this.storage.setItem(SAMPLE_SEEDED_KEY, 'true')
       return [...SAMPLE_INVESTMENT_TRANSACTIONS]
     }

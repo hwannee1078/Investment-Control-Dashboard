@@ -6,7 +6,7 @@ export const PROJECTS_STORAGE_KEY = 'investment-dashboard.projects.v1'
 export class ProjectRepository {
   constructor(private readonly storage: Storage = localStorage) {
     if (this.storage.getItem(PROJECTS_STORAGE_KEY) === null) {
-      this.write(import.meta.env.PROD ? [] : SAMPLE_PROJECTS)
+      this.write(SAMPLE_PROJECTS)
     }
   }
 
