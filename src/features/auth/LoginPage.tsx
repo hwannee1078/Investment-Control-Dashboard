@@ -5,6 +5,8 @@ import { getUserRole } from './userStore'
 import { ensureCloudUserRole, getCloudUserRole } from '../../services/cloudSync'
 import { isSupabaseConfigured, supabase } from '../../services/supabaseClient'
 
+const AUTH_EMAIL_DOMAIN = '@investment.local'
+
 type LoginErrors = { username?: string; password?: string }
 
 export default function LoginPage() {
@@ -28,7 +30,7 @@ export default function LoginPage() {
     if (isSupabaseConfigured && supabase) {
       if (registerMode) {
         const { data, error } = await supabase.auth.signUp({
-          email: `${username.trim().toLowerCase()}@investment.local`,
+          email: `${username.trim().toLowerCase()}${AUTH_EMAIL_DOMAIN}`,
           password,
           options: { data: { employee_id: username.trim() } },
         })
@@ -46,7 +48,7 @@ export default function LoginPage() {
         createAuthenticatedSession(await getCloudUserRole(data.user.id))
       } else {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${username.trim().toLowerCase()}@investment.local`,
+        email: `${username.trim().toLowerCase()}${AUTH_EMAIL_DOMAIN}`,
         password,
       })
       if (error || !data.user) {
