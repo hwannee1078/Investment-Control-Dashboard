@@ -127,6 +127,21 @@ export default function ProjectForm({
             ))}
           </select>
         </label>
+        <label>
+          승인투자비(원)
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={project.approvalBudget ?? ''}
+            onChange={(event) =>
+              setProject((current) => ({
+                ...current,
+                approvalBudget: event.target.value === '' ? null : Number(event.target.value),
+              }))
+            }
+          />
+        </label>
       </div>
 
       <div className="status-comparison">
@@ -148,6 +163,7 @@ export default function ProjectForm({
                 <th scope="col">단계</th>
                 <th scope="col">계획일</th>
                 <th scope="col">실적일</th>
+                <th scope="col">실적 사유</th>
               </tr>
             </thead>
             <tbody>
@@ -177,6 +193,29 @@ export default function ProjectForm({
                       value={project.schedule[stage].actual ?? ''}
                       onChange={(event) =>
                         updateSchedule(stage, 'actual', event.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <label className="visually-hidden" htmlFor={`${stage}-actual-reason`}>
+                      {stage} 실적 사유
+                    </label>
+                    <textarea
+                      id={`${stage}-actual-reason`}
+                      rows={2}
+                      placeholder="실적 지연·선행 사유"
+                      value={project.schedule[stage].actualReason ?? ''}
+                      onChange={(event) =>
+                        setProject((current) => ({
+                          ...current,
+                          schedule: {
+                            ...current.schedule,
+                            [stage]: {
+                              ...current.schedule[stage],
+                              actualReason: event.target.value === '' ? null : event.target.value,
+                            },
+                          },
+                        }))
                       }
                     />
                   </td>

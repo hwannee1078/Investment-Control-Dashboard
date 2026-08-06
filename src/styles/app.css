@@ -777,6 +777,17 @@ tbody th {
   min-width: 155px;
 }
 
+.schedule-editor textarea {
+  width: 100%;
+  min-width: 180px;
+  resize: vertical;
+}
+
+.actual-date-with-reason {
+  border-bottom: 1px dotted #1f81b8;
+  cursor: help;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;

@@ -20,7 +20,7 @@ describe('project domain', () => {
     for (const project of SAMPLE_PROJECTS) {
       expect(Object.keys(project.schedule)).toEqual(PROJECT_STAGES)
       expect(Object.values(project.schedule)).toEqual(
-        PROJECT_STAGES.map(() => ({ plan: null, actual: null })),
+        PROJECT_STAGES.map(() => ({ plan: null, actual: null, actualReason: null })),
       )
     }
   })

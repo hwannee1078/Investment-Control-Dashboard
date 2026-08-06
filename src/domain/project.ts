@@ -10,7 +10,7 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number]
 
 export type ProjectSchedule = Record<
   ProjectStage,
-  { plan: string | null; actual: string | null }
+  { plan: string | null; actual: string | null; actualReason?: string | null }
 >
 
 export type Project = {
@@ -26,10 +26,10 @@ export type Project = {
 
 export function createEmptySchedule(): ProjectSchedule {
   return {
-    사업승인: { plan: null, actual: null },
-    토건착공: { plan: null, actual: null },
-    기전착공: { plan: null, actual: null },
-    '준공(시운전완료)': { plan: null, actual: null },
-    SOP: { plan: null, actual: null },
+    사업승인: { plan: null, actual: null, actualReason: null },
+    토건착공: { plan: null, actual: null, actualReason: null },
+    기전착공: { plan: null, actual: null, actualReason: null },
+    '준공(시운전완료)': { plan: null, actual: null, actualReason: null },
+    SOP: { plan: null, actual: null, actualReason: null },
   }
 }

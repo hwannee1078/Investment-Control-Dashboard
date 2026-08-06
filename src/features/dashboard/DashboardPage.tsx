@@ -111,7 +111,16 @@ export default function DashboardPage() {
                 <tr key={`${project.id}-actual`}>
                   <th scope="row">실적</th>
                   {PROJECT_STAGES.map((stage) => (
-                    <td key={stage}>{project.schedule[stage].actual ?? '-'}</td>
+                    <td key={stage}>
+                      {project.schedule[stage].actual ? (
+                        <span
+                          className="actual-date-with-reason"
+                          title={project.schedule[stage].actualReason ?? '실적 사유가 입력되지 않았습니다.'}
+                        >
+                          {project.schedule[stage].actual}
+                        </span>
+                      ) : '-'}
+                    </td>
                   ))}
                 </tr>
                 </Fragment>
