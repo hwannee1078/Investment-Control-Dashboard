@@ -657,13 +657,13 @@ a {
 .investment-bar-label span { color: #178096; }
 .investment-bar-track { position: relative; height: 24px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e8eef4; }
 .investment-bar { position: absolute; left: 0; z-index: 1; display: block; height: 8px; border-radius: 999px; }
-.investment-bar--cumulative { top: 1px; background: #146b76; }
-.investment-bar--approval { bottom: 1px; background: #b9d7e5; }
+.investment-bar--cumulative { top: 1px; background: #b9d7e5; }
+.investment-bar--approval { bottom: 1px; background: #146b76; }
 .investment-bar-values { display: flex; justify-content: space-between; color: #718096; font-size: 0.72rem; }
 .investment-bar-legend { display: flex; gap: 14px; margin-top: 20px; color: #64748b; font-size: 0.75rem; }
 .legend-dot { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; }
-.legend-dot--approval { background: #b9d7e5; }
-.legend-dot--cumulative { background: #146b76; }
+.legend-dot--approval { background: #146b76; }
+.legend-dot--cumulative { background: #b9d7e5; }
 
 .management-panel td:last-child {
   display: flex;
