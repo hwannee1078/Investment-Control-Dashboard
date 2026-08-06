@@ -5,6 +5,7 @@ import type { Project } from '../../domain/project'
 import ProjectForm from './ProjectForm'
 import { canAdminEdit, getSessionRole } from '../auth/authStore'
 import { isWorkflowFinalized } from '../auth/workflowStore'
+import UserRoleManagement from './UserRoleManagement'
 
 export default function ProjectManagePage() {
   const repository = useMemo(() => new ProjectRepository(), [])
@@ -21,6 +22,7 @@ export default function ProjectManagePage() {
 
   return (
     <main className="page-shell">
+      {role === 'admin' ? <UserRoleManagement /> : null}
       <header className="page-heading">
         <div>
           <p className="eyebrow">Project Administration</p>
