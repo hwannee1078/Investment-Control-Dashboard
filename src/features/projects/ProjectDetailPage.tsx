@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import MetricCard from '../../components/MetricCard'
 import { InvestmentRepository } from '../../data/investmentRepository'
 import { ProjectRepository } from '../../data/projectRepository'
 import type { InvestmentSummary as InvestmentSummaryValue } from '../../domain/investment'
@@ -79,8 +78,12 @@ export default function ProjectDetailPage() {
           </div>
           <div>
             <dt>현재 단계</dt>
-          <dd>{project.status}</dd>
-          <div><dt>승인투자비</dt><dd>{project.approvalBudget === null ? '-' : `${currency.format(project.approvalBudget)}원`}</dd></div>
+            <dd>{project.status}</dd>
+          </div>
+          <div className="project-facts__investment">
+            <dt>승인투자비</dt>
+            <dd>{project.approvalBudget === null ? '-' : `${currency.format(project.approvalBudget)}원`}</dd>
+            <small>누적투자비 {currency.format(summary.cumulativeTotal)}원 · 집행률 {summary.executionRate === null ? '-' : `${summary.executionRate.toFixed(1)}%`}</small>
           </div>
         </dl>
       </section>
@@ -91,15 +94,6 @@ export default function ProjectDetailPage() {
       </section>
 
       <section className="detail-panel investment-section">
-        <MetricCard
-          label="승인투자비"
-          value={
-            project.approvalBudget === null
-              ? '-'
-              : `${currency.format(project.approvalBudget)}원`
-          }
-        />
-        <p className="metric-subtext">누적투자비 {currency.format(summary.cumulativeTotal)}원 · 집행률 {summary.executionRate === null ? '-' : `${summary.executionRate.toFixed(1)}%`}</p>
         <InvestmentSummary summary={summary} />
       </section>
 

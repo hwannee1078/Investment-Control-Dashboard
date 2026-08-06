@@ -591,6 +591,18 @@ a {
   font-weight: 700;
 }
 
+.project-facts__investment dd {
+  font-size: 1.05rem;
+}
+
+.project-facts__investment small {
+  display: block;
+  margin-top: 8px;
+  color: #718094;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
 .table-scroll {
   overflow-x: auto;
   margin-top: 20px;
