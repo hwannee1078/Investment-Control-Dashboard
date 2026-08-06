@@ -1061,3 +1061,21 @@ tbody th {
     grid-template-columns: 1fr;
   }
 }
+.rolling-year-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.rolling-year-tabs button {
+  border: 1px solid var(--border-color, #d7e1ea);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.rolling-year-tabs button.active {
+  background: #0b4f75;
+  color: #fff;
+}

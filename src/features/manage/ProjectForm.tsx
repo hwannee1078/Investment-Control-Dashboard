@@ -36,7 +36,12 @@ export default function ProjectForm({
     ) as ProjectSchedule,
   }))
   const [nameError, setNameError] = useState('')
-  const rollingMonths = ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12']
+  const currentYear = new Date().getFullYear()
+  const rollingYears = [currentYear, currentYear + 1, currentYear + 2]
+  const [selectedRollingYear, setSelectedRollingYear] = useState(currentYear)
+  const rollingMonths = Array.from({ length: 12 }, (_, index) => `${selectedRollingYear}-${String(index + 1).padStart(2, '0')}`)
+  const formatAmount = (amount: number | null | undefined) => amount === null || amount === undefined ? '' : new Intl.NumberFormat('ko-KR').format(amount)
+  const parseAmount = (value: string) => value.replace(/[^0-9]/g, '')
   const derivedStatus = useMemo(
     () => automaticStatus(project.schedule),
     [project.schedule],
@@ -131,14 +136,12 @@ export default function ProjectForm({
         <label>
           승인투자비(원)
           <input
-            type="number"
-            min="0"
-            step="1"
-            value={project.approvalBudget ?? ''}
+            inputMode="numeric"
+            value={formatAmount(project.approvalBudget)}
             onChange={(event) =>
               setProject((current) => ({
                 ...current,
-                approvalBudget: event.target.value === '' ? null : Number(event.target.value),
+                approvalBudget: parseAmount(event.target.value) === '' ? null : Number(parseAmount(event.target.value)),
               }))
             }
           />
@@ -230,6 +233,9 @@ export default function ProjectForm({
       <fieldset className="schedule-editor rolling-plan-editor">
         <legend>Rolling Plan (월별 계획투자비)</legend>
         <p className="form-help">샘플 단계에서는 관리자가 월별 계획금액과 차이 사유를 직접 입력합니다.</p>
+        <div className="rolling-year-tabs" role="tablist" aria-label="Rolling Plan 연도 선택">
+          {rollingYears.map((year) => <button key={year} type="button" role="tab" aria-selected={selectedRollingYear === year} className={selectedRollingYear === year ? 'active' : ''} onClick={() => setSelectedRollingYear(year)}>{year}년</button>)}
+        </div>
         <div className="table-scroll">
           <table aria-label="Rolling Plan 입력">
             <thead><tr><th>월</th><th>계획투자비(원)</th><th>차이 사유</th></tr></thead>
@@ -239,7 +245,7 @@ export default function ProjectForm({
                 return (
                   <tr key={month}>
                     <th scope="row">{month}</th>
-                    <td><input type="number" min="0" value={row.amount ?? ''} onChange={(event) => setProject((current) => ({ ...current, rollingPlan: { ...current.rollingPlan, [month]: { ...row, amount: event.target.value === '' ? null : Number(event.target.value) } } }))} /></td>
+                    <td><input inputMode="numeric" value={formatAmount(row.amount)} onChange={(event) => { const value = parseAmount(event.target.value); setProject((current) => ({ ...current, rollingPlan: { ...current.rollingPlan, [month]: { ...row, amount: value === '' ? null : Number(value) } } })) }} /></td>
                     <td><input value={row.reason ?? ''} placeholder="계획 대비 차이 사유" onChange={(event) => setProject((current) => ({ ...current, rollingPlan: { ...current.rollingPlan, [month]: { ...row, reason: event.target.value === '' ? null : event.target.value } } }))} /></td>
                   </tr>
                 )
