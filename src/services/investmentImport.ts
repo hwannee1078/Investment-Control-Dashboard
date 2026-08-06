@@ -131,7 +131,13 @@ function normalizeReportMonth(value: unknown): string | null {
   const match = /(\d{4})[-./](\d{1,2})(?:[-./]\d{1,2})?/.exec(
     String(value ?? ''),
   )
-  return match === null ? null : normalizeMonth(`${match[1]}-${match[2]}`, true)
+  if (match !== null) return normalizeMonth(`${match[1]}-${match[2]}`, true)
+
+  // Some internal reports store the period as "- 6 6 2026" or "- 7 7 2026".
+  const spacedPeriod = /(?:^|\D)(\d{1,2})\D+\d{1,2}\D+(\d{4})(?:\D|$)/.exec(String(value ?? ''))
+  return spacedPeriod === null
+    ? null
+    : normalizeMonth(`${spacedPeriod[2]}-${spacedPeriod[1]}`, true)
 }
 
 async function readFile(file: File): Promise<ArrayBuffer> {
