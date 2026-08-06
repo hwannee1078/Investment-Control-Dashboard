@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import App from '../../App'
+import { PROJECTS_STORAGE_KEY } from '../../data/projectRepository'
+import { SAMPLE_PROJECTS } from '../../domain/sampleData'
 
 const SESSION_KEY = 'investment-dashboard.authenticated'
 
@@ -117,5 +119,30 @@ describe('executive dashboard', () => {
     expect(screen.getAllByText('누적투자비').length).toBeGreaterThan(0)
     expect(screen.getAllByText('11941.3').length).toBeGreaterThan(0)
     expect(screen.getAllByText('-84.7').length).toBeGreaterThan(0)
+  })
+
+  it('shows only written actual reasons in the fixed reason panel', () => {
+    const project = SAMPLE_PROJECTS[0]
+    localStorage.setItem(
+      PROJECTS_STORAGE_KEY,
+      JSON.stringify([
+        {
+          ...project,
+          schedule: {
+            ...project.schedule,
+            사업승인: { plan: '2026-01-01', actual: '2026-01-03', actualReason: '인허가 검토 지연' },
+            토건착공: { plan: '2026-02-01', actual: '2026-02-02', actualReason: null },
+          },
+        },
+      ]),
+    )
+
+    renderApp('/dashboard')
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    fireEvent.mouseEnter(screen.getByText('2026-01-03'))
+    expect(screen.getByRole('status')).toHaveTextContent('인허가 검토 지연')
+    expect(screen.getByRole('status')).toHaveTextContent('사업승인 실적 사유')
+    expect(screen.getByText('2026-02-02')).toBeInTheDocument()
   })
 })

@@ -16,6 +16,11 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [hoveredMaterial, setHoveredMaterial] = useState<Material | null>(null)
+  const [selectedReason, setSelectedReason] = useState<{
+    projectName: string
+    stage: string
+    reason: string
+  } | null>(null)
   const sampleMode = new URLSearchParams(location.search).get('sample') === '1'
   const dashboard = useMemo(() => {
     const projects = new ProjectRepository().list().filter((project) => project.active !== false)
@@ -113,25 +118,43 @@ export default function DashboardPage() {
                 </tr>
                 <tr key={`${project.id}-actual`}>
                   <th scope="row">실적</th>
-                  {PROJECT_STAGES.map((stage) => (
-                    <td key={stage}>
-                      {project.schedule[stage].actual ? (
-                        <span
-                          className="actual-date-with-reason"
-                          data-tooltip={project.schedule[stage].actualReason ?? '실적 사유가 입력되지 않았습니다.'}
-                          aria-label={`${project.schedule[stage].actual}, 실적 사유: ${project.schedule[stage].actualReason ?? '입력 없음'}`}
-                        >
-                          {project.schedule[stage].actual}
-                        </span>
-                      ) : '-'}
-                    </td>
-                  ))}
+                  {PROJECT_STAGES.map((stage) => {
+                    const schedule = project.schedule[stage]
+                    const reason = schedule.actualReason?.trim()
+                    return (
+                      <td key={stage}>
+                        {schedule.actual ? (
+                          reason ? (
+                            <span
+                              className="actual-date-with-reason"
+                              tabIndex={0}
+                              aria-label={`${schedule.actual}, 실적 사유: ${reason}`}
+                              onMouseEnter={() => setSelectedReason({ projectName: project.name, stage, reason })}
+                              onFocus={() => setSelectedReason({ projectName: project.name, stage, reason })}
+                              onMouseLeave={() => setSelectedReason(null)}
+                              onBlur={() => setSelectedReason(null)}
+                            >
+                              {schedule.actual}
+                            </span>
+                          ) : (
+                            schedule.actual
+                          )
+                        ) : '-'}
+                      </td>
+                    )
+                  })}
                 </tr>
                 </Fragment>
               ))}
             </tbody>
           </table>
         </div>
+        {selectedReason ? (
+          <div className="actual-reason-panel" role="status" aria-live="polite">
+            <strong>{selectedReason.projectName} · {selectedReason.stage} 실적 사유</strong>
+            <span>{selectedReason.reason}</span>
+          </div>
+        ) : null}
       </section>
     </main>
   )
@@ -139,7 +162,7 @@ export default function DashboardPage() {
 
 function InvestmentBarChart({ projects, summaries }: { projects: Project[]; summaries: Map<string, InvestmentSummary> }) {
   const max = Math.max(1, ...projects.map((project) => Math.max(project.approvalBudget ?? 0, summaries.get(project.id)?.cumulativeTotal ?? 0)))
-  return <section className="investment-bar-chart" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황</h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--approval" style={{ width: `${approval / max * 100}%` }} /><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulative / max * 100}%` }} /></div><div className="investment-bar-values"><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--approval" />승인투자비</span><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><strong>누적률</strong></div></section>
+  return <section className="investment-bar-chart" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황</h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulative / max * 100}%` }} /><i className="investment-bar investment-bar--approval" style={{ width: `${approval / max * 100}%` }} /></div><div className="investment-bar-values"><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><span><i className="legend-dot legend-dot--approval" />승인투자비</span><strong>누적률</strong></div></section>
 }
 
 function InvestmentSummaryCell({

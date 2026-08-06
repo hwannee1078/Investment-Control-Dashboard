@@ -305,7 +305,7 @@ a {
 
 .business-list-table th,
 .business-list-table td {
-  height: 38px;
+  height: 36px;
   padding: 5px 4px;
   border-bottom: 1px solid #e8edf2;
   vertical-align: middle;
@@ -316,7 +316,7 @@ a {
 }
 
 .business-list-table th:nth-child(1) {
-  width: 18%;
+  width: 20%;
 }
 
 .business-list-table th:nth-child(2) {
@@ -328,11 +328,11 @@ a {
 .business-list-table th:nth-child(5),
 .business-list-table th:nth-child(6),
 .business-list-table th:nth-child(7) {
-  width: 9%;
+  width: 10%;
 }
 
 .business-list-table th:nth-child(8) {
-  width: 31%;
+  width: 24%;
 }
 
 .business-list-table tbody th[scope='row'] {
@@ -359,7 +359,7 @@ a {
 .investment-summary-list > div {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
   min-height: 24px;
   padding: 3px 2px;
@@ -384,7 +384,7 @@ a {
 }
 
 .business-list-table thead th {
-  height: 42px;
+  height: 38px;
   color: #718094;
   background: #f7fafc;
   font-size: 0.82rem;
@@ -429,9 +429,10 @@ a {
 }
 
 .material-visual {
-  display: grid;
-  grid-template-columns: minmax(310px, 1fr) minmax(260px, 0.8fr);
-  align-items: center;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   min-height: 360px;
   margin-top: 16px;
 }
@@ -470,8 +471,8 @@ a {
 .donut-segment:focus-visible {
   z-index: 1;
   filter: brightness(1.12);
-  outline: 4px solid rgb(255 255 255 / 90%);
-  outline-offset: -7px;
+  outline: 0;
+  box-shadow: inset 0 0 0 4px rgb(255 255 255 / 75%);
 }
 
 .donut-center {
@@ -500,9 +501,20 @@ a {
 }
 
 .project-hover-list {
-  min-height: 190px;
+  position: absolute;
+  z-index: 3;
+  top: 214px;
+  left: 50%;
+  width: min(100%, 310px);
+  max-height: 128px;
+  min-height: 0;
+  overflow-y: auto;
   padding: 20px;
-  border-left: 1px solid #e4e9ef;
+  border: 1px solid #dce5ed;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 14px 30px rgb(25 68 101 / 14%);
+  transform: translateX(-50%);
 }
 
 .project-hover-list > p {
@@ -601,11 +613,7 @@ a {
 }
 
 .portfolio-overview .project-hover-list {
-  width: 100%;
-  max-height: 180px;
-  overflow-y: auto;
-  border-top: 1px solid #e4e9ef;
-  border-left: 0;
+  width: min(100%, 310px);
 }
 
 .portfolio-overview {
@@ -628,8 +636,8 @@ a {
 .investment-bar-label span { color: #178096; }
 .investment-bar-track { position: relative; height: 13px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e8eef4; }
 .investment-bar { position: absolute; left: 0; display: block; height: 6px; border-radius: 999px; }
-.investment-bar--approval { top: 1px; background: #9eb7c9; }
-.investment-bar--cumulative { bottom: 1px; background: #35b6b0; }
+.investment-bar--cumulative { top: 1px; background: #35b6b0; }
+.investment-bar--approval { bottom: 1px; background: #9eb7c9; }
 .investment-bar-values { display: flex; justify-content: space-between; color: #718096; font-size: 0.72rem; }
 .investment-bar-legend { display: flex; gap: 14px; margin-top: 20px; color: #64748b; font-size: 0.75rem; }
 .legend-dot { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; }
@@ -883,24 +891,29 @@ tbody th {
   cursor: help;
 }
 
-.actual-date-with-reason:hover::after,
-.actual-date-with-reason:focus-visible::after {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% + 8px);
-  left: 50%;
-  width: max-content;
-  max-width: 240px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  color: #fff;
-  background: #102c49;
-  content: attr(data-tooltip);
-  font-size: 0.75rem;
-  line-height: 1.35;
-  transform: translateX(-50%);
-  white-space: normal;
-  pointer-events: none;
+.actual-date-with-reason:focus-visible {
+  outline: 2px solid #1f81b8;
+  outline-offset: 3px;
+}
+
+.actual-reason-panel {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid #dce5ed;
+  border-radius: 10px;
+  color: #29435c;
+  background: #f5f9fc;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.actual-reason-panel strong {
+  flex: 0 0 auto;
+  color: #0f5670;
 }
 
 .rolling-chart {
