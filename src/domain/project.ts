@@ -23,6 +23,7 @@ export type Project = {
   approvalBudget: number | null
   orderIds: string[]
   rollingPlan?: Record<string, { amount: number | null; reason: string | null }>
+  active?: boolean
 }
 
 export function createEmptySchedule(): ProjectSchedule {

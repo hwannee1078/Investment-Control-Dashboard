@@ -15,7 +15,7 @@ export default function ProjectDetailPage() {
   const [selectedQuarter, setSelectedQuarter] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
   const detail = useMemo(() => {
-    const project = new ProjectRepository().list().find(({ id }) => id === projectId)
+    const project = new ProjectRepository().list().filter((item) => item.active !== false).find(({ id }) => id === projectId)
     if (!project) return null
     const orderToProject = Object.fromEntries(project.orderIds.map((orderId) => [orderId, project.id]))
     const summary = aggregateInvestment(new InvestmentRepository().listTransactions(), orderToProject, [project]).get(project.id)

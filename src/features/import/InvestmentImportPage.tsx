@@ -14,7 +14,7 @@ function mappingsFromStorage(storage: Storage = localStorage): Record<string, st
 export default function InvestmentImportPage() {
   const projectRepository = useMemo(() => new ProjectRepository(), [])
   const investmentRepository = useMemo(() => new InvestmentRepository(), [])
-  const [projects] = useState(() => projectRepository.list())
+  const [projects] = useState(() => projectRepository.list().filter((project) => project.active !== false))
   const [result, setResult] = useState<ImportResult | null>(null)
   const [orderMappings, setOrderMappings] = useState(() => ({ ...mappingsFromProjects(projects), ...mappingsFromStorage() }))
   const [isReading, setIsReading] = useState(false)

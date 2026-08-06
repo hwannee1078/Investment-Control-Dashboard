@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const [hoveredMaterial, setHoveredMaterial] = useState<Material | null>(null)
   const sampleMode = new URLSearchParams(location.search).get('sample') === '1'
   const dashboard = useMemo(() => {
-    const projects = new ProjectRepository().list()
+    const projects = new ProjectRepository().list().filter((project) => project.active !== false)
     const rows = sampleMode
       ? [...SAMPLE_INVESTMENT_TRANSACTIONS]
       : new InvestmentRepository().listTransactions()

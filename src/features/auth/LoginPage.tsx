@@ -14,7 +14,7 @@ export default function LoginPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextErrors: LoginErrors = {}
-    if (!username.trim()) nextErrors.username = '사번을 입력해 주세요.'
+    if (!username.trim()) nextErrors.username = '아이디를 입력해 주세요.'
     if (!password.trim()) nextErrors.password = '비밀번호를 입력해 주세요.'
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
@@ -23,7 +23,7 @@ export default function LoginPage() {
     navigate(requestedPath ?? '/dashboard', { replace: true })
   }
   return <main className="login-shell"><section className="login-card" aria-labelledby="login-title"><p className="eyebrow">Investment Control Center</p><h1 id="login-title">투자비 대시보드</h1><p className="login-intro">사내 사번과 비밀번호로 로그인하세요.</p><form className="login-form" onSubmit={handleSubmit} noValidate>
-    <label><span>사번</span><input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} aria-invalid={errors.username !== undefined} /></label>{errors.username ? <p className="field-error">{errors.username}</p> : null}
+    <label><span>사번</span><input aria-label="아이디" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} aria-invalid={errors.username !== undefined} /></label>{errors.username ? <p className="field-error">{errors.username}</p> : null}
     <label><span>비밀번호</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} aria-invalid={errors.password !== undefined} /></label>{errors.password ? <p className="field-error">{errors.password}</p> : null}
     <button className="primary-button" type="submit">로그인</button>
   </form></section></main>
