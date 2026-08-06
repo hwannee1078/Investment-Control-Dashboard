@@ -61,12 +61,15 @@ export default function DashboardPage() {
               : '소재에 마우스를 올려 사업을 확인하세요.'}
           </p>
         </div>
-        <MaterialDonut
-          counts={counts}
-          projectsByMaterial={dashboard.projectsByMaterial}
-          onMaterialHover={setHoveredMaterial}
-          onProjectSelect={(projectId) => navigate(`/projects/${projectId}`)}
-        />
+        <div className="portfolio-overview">
+          <MaterialDonut
+            counts={counts}
+            projectsByMaterial={dashboard.projectsByMaterial}
+            onMaterialHover={setHoveredMaterial}
+            onProjectSelect={(projectId) => navigate(`/projects/${projectId}`)}
+          />
+          <InvestmentBarChart projects={dashboard.projects} summaries={dashboard.summaries} />
+        </div>
       </section>
 
       <section className="dashboard-panel business-list-panel" aria-labelledby="business-list-title">
@@ -132,6 +135,11 @@ export default function DashboardPage() {
       </section>
     </main>
   )
+}
+
+function InvestmentBarChart({ projects, summaries }: { projects: Project[]; summaries: Map<string, InvestmentSummary> }) {
+  const max = Math.max(1, ...projects.map((project) => Math.max(project.approvalBudget ?? 0, summaries.get(project.id)?.cumulativeTotal ?? 0)))
+  return <section className="investment-bar-chart" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황</h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--approval" style={{ width: `${approval / max * 100}%` }} /><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulative / max * 100}%` }} /></div><div className="investment-bar-values"><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--approval" />승인투자비</span><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><strong>누적률</strong></div></section>
 }
 
 function InvestmentSummaryCell({
