@@ -282,6 +282,13 @@ a {
   box-shadow: 0 12px 32px rgb(34 57 83 / 6%);
 }
 
+.metric-subtext {
+  margin: -14px 0 20px;
+  color: #718094;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
 .business-list-panel {
   margin-top: 24px;
 }

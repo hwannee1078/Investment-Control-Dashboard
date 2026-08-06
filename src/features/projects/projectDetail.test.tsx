@@ -95,8 +95,7 @@ describe('project detail', () => {
     expect(within(basicInfo).getByText('양극재')).toBeInTheDocument()
     expect(within(basicInfo).getByText('기전착공')).toBeInTheDocument()
     expect(screen.getAllByText('1,000원').length).toBeGreaterThan(0)
-    expect(screen.getByText('300원')).toBeInTheDocument()
-    expect(screen.getByText('30.0%')).toBeInTheDocument()
+    expect(screen.getByText('누적투자비 300원 · 집행률 30.0%')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: '월별 계획·실적 투자비 비교 그래프' })).toBeInTheDocument()
 
     const monthlyToggle = screen.getByRole('button', { name: '월별 투자비 펼치기' })

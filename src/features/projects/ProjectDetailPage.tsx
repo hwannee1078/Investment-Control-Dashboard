@@ -98,6 +98,7 @@ export default function ProjectDetailPage() {
               : `${currency.format(project.approvalBudget)}원`
           }
         />
+        <p className="metric-subtext">누적투자비 {currency.format(summary.cumulativeTotal)}원 · 집행률 {summary.executionRate === null ? '-' : `${summary.executionRate.toFixed(1)}%`}</p>
         <InvestmentSummary summary={summary} />
       </section>
 

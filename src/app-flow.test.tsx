@@ -132,7 +132,7 @@ describe('투자비 대시보드 통합 사용자 흐름', () => {
 
     expect(screen.getByText('2026-10-01')).toBeInTheDocument()
     expect(screen.getByText('2026-10-03')).toBeInTheDocument()
-    expect(screen.getByText('350원')).toBeInTheDocument()
+    expect(screen.getByText(/누적투자비 350원/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '월별 투자비 펼치기' }))
 
     expect(

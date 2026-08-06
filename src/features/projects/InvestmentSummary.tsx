@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import MetricCard from '../../components/MetricCard'
 import type { InvestmentSummary as InvestmentSummaryValue } from '../../domain/investment'
 
 const currency = new Intl.NumberFormat('ko-KR')
@@ -14,20 +13,6 @@ export default function InvestmentSummary({
 
   return (
     <section aria-labelledby="investment-summary-title">
-      <h2 id="investment-summary-title">투자비 요약</h2>
-      <div className="summary-card-grid">
-        <MetricCard
-          label="누적투자비"
-          value={`${currency.format(summary.cumulativeTotal)}원`}
-          tone="blue"
-        />
-        <MetricCard
-          label="집행률(%)"
-          value={summary.executionRate === null ? '-' : `${summary.executionRate.toFixed(1)}%`}
-          tone="mint"
-        />
-      </div>
-
       <div className="monthly-investment">
         <button
           className="text-button"
