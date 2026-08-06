@@ -121,7 +121,7 @@ describe('executive dashboard', () => {
     expect(screen.getAllByText('-84.7').length).toBeGreaterThan(0)
   })
 
-  it('shows only written actual reasons in the fixed reason panel', () => {
+  it('shows a hover reason only when the actual reason is written', () => {
     const project = SAMPLE_PROJECTS[0]
     localStorage.setItem(
       PROJECTS_STORAGE_KEY,
@@ -139,10 +139,7 @@ describe('executive dashboard', () => {
 
     renderApp('/dashboard')
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
-    fireEvent.mouseEnter(screen.getByText('2026-01-03'))
-    expect(screen.getByRole('status')).toHaveTextContent('인허가 검토 지연')
-    expect(screen.getByRole('status')).toHaveTextContent('사업승인 실적 사유')
-    expect(screen.getByText('2026-02-02')).toBeInTheDocument()
+    expect(screen.getByText('2026-01-03')).toHaveAttribute('data-tooltip', '인허가 검토 지연')
+    expect(screen.getByText('2026-02-02')).not.toHaveAttribute('data-tooltip')
   })
 })

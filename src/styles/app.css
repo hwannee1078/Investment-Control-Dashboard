@@ -300,7 +300,7 @@ a {
   border: 1px solid #e1e7ee;
   border-radius: 14px;
   border-spacing: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .business-list-table th,
@@ -896,24 +896,28 @@ tbody th {
   outline-offset: 3px;
 }
 
-.actual-reason-panel {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  margin-top: 10px;
-  padding: 10px 14px;
-  border: 1px solid #dce5ed;
-  border-radius: 10px;
+.actual-date-with-reason:hover::after,
+.actual-date-with-reason:focus-visible::after {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  left: 50%;
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 9px;
+  border: 1px solid #d7e3ec;
+  border-radius: 8px;
   color: #29435c;
-  background: #f5f9fc;
-  font-size: 0.78rem;
-  line-height: 1.4;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(25 68 101 / 16%);
+  content: attr(data-tooltip);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+  transform: translateX(-50%);
+  white-space: normal;
   overflow-wrap: anywhere;
-}
-
-.actual-reason-panel strong {
-  flex: 0 0 auto;
-  color: #0f5670;
+  pointer-events: none;
 }
 
 .rolling-chart {

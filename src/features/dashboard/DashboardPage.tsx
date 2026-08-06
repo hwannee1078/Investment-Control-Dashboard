@@ -16,11 +16,6 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [hoveredMaterial, setHoveredMaterial] = useState<Material | null>(null)
-  const [selectedReason, setSelectedReason] = useState<{
-    projectName: string
-    stage: string
-    reason: string
-  } | null>(null)
   const sampleMode = new URLSearchParams(location.search).get('sample') === '1'
   const dashboard = useMemo(() => {
     const projects = new ProjectRepository().list().filter((project) => project.active !== false)
@@ -128,11 +123,8 @@ export default function DashboardPage() {
                             <span
                               className="actual-date-with-reason"
                               tabIndex={0}
+                              data-tooltip={reason}
                               aria-label={`${schedule.actual}, 실적 사유: ${reason}`}
-                              onMouseEnter={() => setSelectedReason({ projectName: project.name, stage, reason })}
-                              onFocus={() => setSelectedReason({ projectName: project.name, stage, reason })}
-                              onMouseLeave={() => setSelectedReason(null)}
-                              onBlur={() => setSelectedReason(null)}
                             >
                               {schedule.actual}
                             </span>
@@ -149,12 +141,6 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
-        {selectedReason ? (
-          <div className="actual-reason-panel" role="status" aria-live="polite">
-            <strong>{selectedReason.projectName} · {selectedReason.stage} 실적 사유</strong>
-            <span>{selectedReason.reason}</span>
-          </div>
-        ) : null}
       </section>
     </main>
   )
