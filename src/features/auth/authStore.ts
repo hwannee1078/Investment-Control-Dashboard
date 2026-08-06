@@ -8,7 +8,7 @@ export function hasAuthenticatedSession(): boolean {
 
 export function getSessionRole(): UserRole {
   const role = sessionStorage.getItem(AUTH_ROLE_KEY)
-  if (role === 'staff' || role === 'admin') return role
+  if (role === 'viewer' || role === 'staff' || role === 'admin') return role
   // Existing prototype sessions predate role storage; keep them usable as staff.
   return hasAuthenticatedSession() ? 'staff' : 'viewer'
 }
