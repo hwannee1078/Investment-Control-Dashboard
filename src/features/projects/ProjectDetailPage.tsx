@@ -49,6 +49,8 @@ export default function ProjectDetailPage() {
   }
 
   const { project, summary } = detail
+  const rollingMonths = Object.keys(project.rollingPlan ?? {}).sort()
+  const chartMonths = [...new Set([...Object.keys(summary.monthly), ...rollingMonths])].sort()
 
   return (
     <main className="page-shell">
@@ -76,7 +78,8 @@ export default function ProjectDetailPage() {
           </div>
           <div>
             <dt>현재 단계</dt>
-            <dd>{project.status}</dd>
+          <dd>{project.status}</dd>
+          <div><dt>승인투자비</dt><dd>{project.approvalBudget === null ? '-' : `${currency.format(project.approvalBudget)}원`}</dd></div>
           </div>
         </dl>
       </section>
@@ -96,6 +99,25 @@ export default function ProjectDetailPage() {
           }
         />
         <InvestmentSummary summary={summary} />
+      </section>
+
+      <section className="detail-panel rolling-chart-panel" aria-labelledby="rolling-chart-title">
+        <h2 id="rolling-chart-title">분기별 Rolling Plan 비교</h2>
+        {chartMonths.length === 0 ? <p className="empty-state">등록된 월별 계획 또는 실적이 없습니다.</p> : (
+          <div className="rolling-chart" role="img" aria-label="월별 계획·실적 투자비 비교 그래프">
+            {chartMonths.map((month) => {
+              const plan = project.rollingPlan?.[month]?.amount ?? 0
+              const actual = summary.monthly[month] ?? 0
+              const max = Math.max(1, ...chartMonths.map((item) => Math.max(Math.abs(project.rollingPlan?.[item]?.amount ?? 0), Math.abs(summary.monthly[item] ?? 0))))
+              const reason = project.rollingPlan?.[month]?.reason
+              return <button key={month} type="button" className="rolling-bar-group" title={reason ?? '차이 사유가 입력되지 않았습니다.'}>
+                <span className="rolling-month">{month}</span>
+                <span className="rolling-bars"><i className="rolling-bar rolling-bar--plan" style={{ height: `${Math.max(2, Math.abs(plan) / max * 100)}%` }} /><i className="rolling-bar rolling-bar--actual" style={{ height: `${Math.max(2, Math.abs(actual) / max * 100)}%` }} /></span>
+                <small>계획 {Math.round(plan / 100000000)} / 실적 {Math.round(actual / 100000000)}억원</small>
+              </button>
+            })}
+          </div>
+        )}
       </section>
     </main>
   )

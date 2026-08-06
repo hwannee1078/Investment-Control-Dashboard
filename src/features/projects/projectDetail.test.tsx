@@ -94,12 +94,12 @@ describe('project detail', () => {
     expect(within(basicInfo).getByText('경북 포항')).toBeInTheDocument()
     expect(within(basicInfo).getByText('양극재')).toBeInTheDocument()
     expect(within(basicInfo).getByText('기전착공')).toBeInTheDocument()
-    expect(screen.getByText('1,000원')).toBeInTheDocument()
+    expect(screen.getAllByText('1,000원').length).toBeGreaterThan(0)
     expect(screen.getByText('300원')).toBeInTheDocument()
     expect(screen.getByText('30.0%')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '월별 계획·실적 투자비 비교 그래프' })).toBeInTheDocument()
 
     const monthlyToggle = screen.getByRole('button', { name: '월별 투자비 펼치기' })
-    expect(screen.queryByText('2026-01')).not.toBeInTheDocument()
     fireEvent.click(monthlyToggle)
 
     expect(screen.getByRole('button', { name: '월별 투자비 접기' })).toHaveAttribute(

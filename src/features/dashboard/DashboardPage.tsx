@@ -115,7 +115,8 @@ export default function DashboardPage() {
                       {project.schedule[stage].actual ? (
                         <span
                           className="actual-date-with-reason"
-                          title={project.schedule[stage].actualReason ?? '실적 사유가 입력되지 않았습니다.'}
+                          data-tooltip={project.schedule[stage].actualReason ?? '실적 사유가 입력되지 않았습니다.'}
+                          aria-label={`${project.schedule[stage].actual}, 실적 사유: ${project.schedule[stage].actualReason ?? '입력 없음'}`}
                         >
                           {project.schedule[stage].actual}
                         </span>

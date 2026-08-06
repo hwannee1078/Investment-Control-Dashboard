@@ -36,6 +36,7 @@ export default function ProjectForm({
     ) as ProjectSchedule,
   }))
   const [nameError, setNameError] = useState('')
+  const rollingMonths = ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12']
   const derivedStatus = useMemo(
     () => automaticStatus(project.schedule),
     [project.schedule],
@@ -221,6 +222,28 @@ export default function ProjectForm({
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <fieldset className="schedule-editor rolling-plan-editor">
+        <legend>Rolling Plan (월별 계획투자비)</legend>
+        <p className="form-help">샘플 단계에서는 관리자가 월별 계획금액과 차이 사유를 직접 입력합니다.</p>
+        <div className="table-scroll">
+          <table aria-label="Rolling Plan 입력">
+            <thead><tr><th>월</th><th>계획투자비(원)</th><th>차이 사유</th></tr></thead>
+            <tbody>
+              {rollingMonths.map((month) => {
+                const row = project.rollingPlan?.[month] ?? { amount: null, reason: null }
+                return (
+                  <tr key={month}>
+                    <th scope="row">{month}</th>
+                    <td><input type="number" min="0" value={row.amount ?? ''} onChange={(event) => setProject((current) => ({ ...current, rollingPlan: { ...current.rollingPlan, [month]: { ...row, amount: event.target.value === '' ? null : Number(event.target.value) } } }))} /></td>
+                    <td><input value={row.reason ?? ''} placeholder="계획 대비 차이 사유" onChange={(event) => setProject((current) => ({ ...current, rollingPlan: { ...current.rollingPlan, [month]: { ...row, reason: event.target.value === '' ? null : event.target.value } } }))} /></td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
