@@ -361,6 +361,7 @@ a {
   grid-template-columns: 1fr auto;
   gap: 4px;
   align-items: center;
+  justify-items: center;
   min-height: 24px;
   padding: 3px 2px;
   border-bottom: 1px solid #e2e8ef;
@@ -380,7 +381,9 @@ a {
 .investment-summary-list strong {
   color: #102c49;
   font-weight: 800;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .business-list-table thead th {
@@ -403,6 +406,8 @@ a {
 }
 
 .project-link {
+  display: inline-block;
+  max-width: 100%;
   padding: 0;
   border: 0;
   color: #102c49;
@@ -410,6 +415,9 @@ a {
   font: inherit;
   font-weight: 800;
   text-align: center;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: keep-all;
   overflow-wrap: anywhere;
   cursor: pointer;
 }
@@ -608,12 +616,13 @@ a {
   flex-direction: column;
   grid-template-columns: none;
   min-width: 0;
-  min-height: 0;
+  min-height: 470px;
   margin-top: 0;
 }
 
 .portfolio-overview .project-hover-list {
   width: min(100%, 310px);
+  top: 320px;
 }
 
 .portfolio-overview {
@@ -634,8 +643,8 @@ a {
 .investment-bar-list { display: grid; gap: 16px; margin-top: 18px; }
 .investment-bar-label { display: flex; justify-content: space-between; gap: 12px; color: #243b53; font-size: 0.82rem; font-weight: 700; }
 .investment-bar-label span { color: #178096; }
-.investment-bar-track { position: relative; height: 13px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e8eef4; }
-.investment-bar { position: absolute; left: 0; display: block; height: 6px; border-radius: 999px; }
+.investment-bar-track { position: relative; height: 24px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e8eef4; }
+.investment-bar { position: absolute; left: 0; z-index: 1; display: block; height: 8px; border-radius: 999px; }
 .investment-bar--cumulative { top: 1px; background: #35b6b0; }
 .investment-bar--approval { bottom: 1px; background: #9eb7c9; }
 .investment-bar-values { display: flex; justify-content: space-between; color: #718096; font-size: 0.72rem; }
@@ -888,7 +897,11 @@ tbody th {
 .actual-date-with-reason {
   position: relative;
   border-bottom: 1px dotted #1f81b8;
+  font-weight: 800;
   cursor: help;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 .actual-date-with-reason:focus-visible {
