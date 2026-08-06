@@ -4,7 +4,7 @@ import { ProjectRepository } from '../../data/projectRepository'
 import type { Project } from '../../domain/project'
 import ProjectForm from './ProjectForm'
 import { canAdminEdit, getSessionRole } from '../auth/authStore'
-import { isWorkflowFinalized } from '../auth/workflowStore'
+import { isProjectFinalized } from '../auth/workflowStore'
 import UserRoleManagement from './UserRoleManagement'
 
 export default function ProjectManagePage() {
@@ -12,7 +12,7 @@ export default function ProjectManagePage() {
   const [projects, setProjects] = useState(() => repository.list())
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const role = getSessionRole()
-  const isLocked = isWorkflowFinalized() && !canAdminEdit(role)
+  const allLocked = projects.length > 0 && projects.every((project) => isProjectFinalized(project.id) && !canAdminEdit(role))
 
   function saveProject(project: Project) {
     repository.save(project)
@@ -56,7 +56,7 @@ export default function ProjectManagePage() {
                     <td>{project.material}</td>
                     <td>{project.status}</td>
                     <td>
-                      {isLocked ? <span className="muted">잠금</span> : <a
+                      {isProjectFinalized(project.id) && !canAdminEdit(role) ? <span className="muted">잠금</span> : <a
                         className="text-button"
                         href={`/manage#${project.id}`}
                         aria-label={`${project.name} 수정`}

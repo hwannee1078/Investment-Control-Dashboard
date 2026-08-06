@@ -4,12 +4,14 @@ type OrderMappingTableProps = {
   orders: string[]
   projects: Project[]
   onMap: (orderId: string, projectId: string) => void
+  disabledProjectIds?: Set<string>
 }
 
 export default function OrderMappingTable({
   orders,
   projects,
   onMap,
+  disabledProjectIds = new Set(),
 }: OrderMappingTableProps) {
   return (
     <section className="preview-section mapping-section" aria-label="미연결 오더">
@@ -44,7 +46,7 @@ export default function OrderMappingTable({
                     >
                       <option value="">사업 선택</option>
                       {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
+                        <option key={project.id} value={project.id} disabled={disabledProjectIds.has(project.id)}>
                           {project.name}
                         </option>
                       ))}
