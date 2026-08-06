@@ -12,6 +12,8 @@ import {
 } from '../../services/investmentImport'
 import ImportPreview from './ImportPreview'
 import OrderMappingTable from './OrderMappingTable'
+import { canAdminEdit, getSessionRole } from '../auth/authStore'
+import { finalizeWorkflow, isWorkflowFinalized } from '../auth/workflowStore'
 
 function mappingsFromProjects(projects: Project[]): Record<string, string> {
   return Object.fromEntries(
@@ -47,6 +49,8 @@ export default function InvestmentImportPage() {
   const [readError, setReadError] = useState('')
   const [confirmError, setConfirmError] = useState('')
   const [completed, setCompleted] = useState(false)
+  const role = getSessionRole()
+  const isLocked = isWorkflowFinalized() && !canAdminEdit(role)
 
   const projectIds = useMemo(
     () => new Set(projects.map(({ id }) => id)),
@@ -83,6 +87,10 @@ export default function InvestmentImportPage() {
   }
 
   function confirmImport() {
+    if (isLocked) {
+      setConfirmError('확정 완료된 자료는 관리자만 수정할 수 있습니다.')
+      return
+    }
     if (result === null) return
 
     const existingMappings = mappingsFromStorage()
@@ -123,6 +131,7 @@ export default function InvestmentImportPage() {
     setResult(null)
     setConfirmError('')
     setCompleted(true)
+    finalizeWorkflow()
   }
 
   function cancelPreview() {
@@ -145,6 +154,7 @@ export default function InvestmentImportPage() {
         <section className="import-upload-panel" aria-labelledby="upload-title">
           <h2 id="upload-title">엑셀 파일 선택</h2>
           <p>파일은 미리보기와 오더 연결을 확인한 뒤에만 저장됩니다.</p>
+          {isLocked ? <p className="status-warning" role="status">확정 완료된 자료입니다. 관리자만 추가 업로드할 수 있습니다.</p> : null}
           <label className="file-picker">
             엑셀 파일
             <input
@@ -152,6 +162,7 @@ export default function InvestmentImportPage() {
               accept=".xlsx,.xls"
               multiple
               onChange={handleFiles}
+              disabled={isLocked}
             />
           </label>
           {isReading ? <p role="status">파일을 분석하고 있습니다.</p> : null}

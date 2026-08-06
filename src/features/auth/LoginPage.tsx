@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { createAuthenticatedSession } from './authStore'
+import { createAuthenticatedSession, type UserRole } from './authStore'
 
 type LoginErrors = {
   username?: string
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const location = useLocation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState<UserRole>('viewer')
   const [errors, setErrors] = useState<LoginErrors>({})
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -31,7 +32,7 @@ export default function LoginPage() {
       return
     }
 
-    createAuthenticatedSession()
+    createAuthenticatedSession(role)
     const requestedPath = (location.state as { from?: string } | null)?.from
     navigate(requestedPath ?? '/dashboard', { replace: true })
   }
@@ -76,6 +77,15 @@ export default function LoginPage() {
               {errors.password}
             </p>
           )}
+
+          <label>
+            <span>사용자 유형</span>
+            <select aria-label="사용자 유형" value={role} onChange={(event) => setRole(event.target.value as UserRole)}>
+              <option value="viewer">임원/직책자/일반 사용자</option>
+              <option value="staff">실무담당자</option>
+              <option value="admin">관리자</option>
+            </select>
+          </label>
 
           <button className="primary-button" type="submit">
             로그인

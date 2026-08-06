@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import AppLayout from './components/AppLayout'
 import LoginPage from './features/auth/LoginPage'
-import { hasAuthenticatedSession } from './features/auth/authStore'
+import { canManage, getSessionRole, hasAuthenticatedSession } from './features/auth/authStore'
 import DashboardPage from './features/dashboard/DashboardPage'
 import InvestmentImportPage from './features/import/InvestmentImportPage'
 import ProjectManagePage from './features/manage/ProjectManagePage'
@@ -18,6 +19,10 @@ function ProtectedLayout() {
   )
 }
 
+function ManageRoute({ children }: { children: ReactNode }) {
+  return canManage(getSessionRole()) ? children : <Navigate to="/dashboard" replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -25,8 +30,8 @@ export default function App() {
       <Route element={<ProtectedLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
-        <Route path="/manage" element={<ProjectManagePage />} />
-        <Route path="/import" element={<InvestmentImportPage />} />
+        <Route path="/manage" element={<ManageRoute><ProjectManagePage /></ManageRoute>} />
+        <Route path="/import" element={<ManageRoute><InvestmentImportPage /></ManageRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

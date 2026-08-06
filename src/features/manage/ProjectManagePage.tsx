@@ -3,11 +3,15 @@ import { useMemo, useState } from 'react'
 import { ProjectRepository } from '../../data/projectRepository'
 import type { Project } from '../../domain/project'
 import ProjectForm from './ProjectForm'
+import { canAdminEdit, getSessionRole } from '../auth/authStore'
+import { isWorkflowFinalized } from '../auth/workflowStore'
 
 export default function ProjectManagePage() {
   const repository = useMemo(() => new ProjectRepository(), [])
   const [projects, setProjects] = useState(() => repository.list())
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const role = getSessionRole()
+  const isLocked = isWorkflowFinalized() && !canAdminEdit(role)
 
   function saveProject(project: Project) {
     repository.save(project)
@@ -50,7 +54,7 @@ export default function ProjectManagePage() {
                     <td>{project.material}</td>
                     <td>{project.status}</td>
                     <td>
-                      <a
+                      {isLocked ? <span className="muted">잠금</span> : <a
                         className="text-button"
                         href={`/manage#${project.id}`}
                         aria-label={`${project.name} 수정`}
@@ -60,7 +64,7 @@ export default function ProjectManagePage() {
                         }}
                       >
                         수정
-                      </a>
+                      </a>}
                     </td>
                   </tr>
                 ))}
