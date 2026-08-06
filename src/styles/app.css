@@ -348,6 +348,8 @@ a {
 
 .investment-summary-cell {
   min-width: 0;
+  vertical-align: middle;
+  text-align: center;
 }
 
 .investment-summary-list {
@@ -358,7 +360,7 @@ a {
 
 .investment-summary-list > div {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr;
   gap: 4px;
   align-items: center;
   justify-items: center;
@@ -374,11 +376,14 @@ a {
 }
 
 .investment-summary-list span {
+  display: block;
   color: #718094;
   font-weight: 600;
+  text-align: center;
 }
 
 .investment-summary-list strong {
+  display: block;
   color: #102c49;
   font-weight: 800;
   white-space: normal;
@@ -616,13 +621,20 @@ a {
   flex-direction: column;
   grid-template-columns: none;
   min-width: 0;
-  min-height: 470px;
+  min-height: 390px;
   margin-top: 0;
+}
+
+.portfolio-overview .material-donut {
+  width: min(230px, 100%);
 }
 
 .portfolio-overview .project-hover-list {
   width: min(100%, 310px);
-  top: 320px;
+  top: 240px;
+  max-height: none;
+  overflow: visible;
+  padding: 12px;
 }
 
 .portfolio-overview {
@@ -645,13 +657,13 @@ a {
 .investment-bar-label span { color: #178096; }
 .investment-bar-track { position: relative; height: 24px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e8eef4; }
 .investment-bar { position: absolute; left: 0; z-index: 1; display: block; height: 8px; border-radius: 999px; }
-.investment-bar--cumulative { top: 1px; background: #35b6b0; }
-.investment-bar--approval { bottom: 1px; background: #9eb7c9; }
+.investment-bar--cumulative { top: 1px; background: #146b76; }
+.investment-bar--approval { bottom: 1px; background: #b9d7e5; }
 .investment-bar-values { display: flex; justify-content: space-between; color: #718096; font-size: 0.72rem; }
 .investment-bar-legend { display: flex; gap: 14px; margin-top: 20px; color: #64748b; font-size: 0.75rem; }
 .legend-dot { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; }
-.legend-dot--approval { background: #9eb7c9; }
-.legend-dot--cumulative { background: #35b6b0; }
+.legend-dot--approval { background: #b9d7e5; }
+.legend-dot--cumulative { background: #146b76; }
 
 .management-panel td:last-child {
   display: flex;
