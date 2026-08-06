@@ -3,6 +3,7 @@ import type { Project } from '../../domain/project'
 type OrderMappingTableProps = {
   orders: string[]
   projects: Project[]
+  mappings: Record<string, string>
   onMap: (orderId: string, projectId: string) => void
   disabledProjectIds?: Set<string>
 }
@@ -10,12 +11,13 @@ type OrderMappingTableProps = {
 export default function OrderMappingTable({
   orders,
   projects,
+  mappings,
   onMap,
   disabledProjectIds = new Set(),
 }: OrderMappingTableProps) {
   return (
-    <section className="preview-section mapping-section" aria-label="미연결 오더">
-      <h3>미연결 오더 ({orders.length})</h3>
+    <section className="preview-section mapping-section" aria-label="투자오더 사업 연결">
+      <h3>투자오더 사업 연결 ({orders.length})</h3>
       {orders.length === 0 ? (
         <p className="empty-state">모든 투자오더가 사업에 연결되었습니다.</p>
       ) : (
@@ -37,7 +39,7 @@ export default function OrderMappingTable({
                     </label>
                     <select
                       id={`mapping-${orderId}`}
-                      defaultValue=""
+                      value={mappings[orderId] ?? ''}
                       onChange={(event) => {
                         if (event.target.value !== '') {
                           onMap(orderId, event.target.value)

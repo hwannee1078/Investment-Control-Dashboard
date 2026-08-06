@@ -25,7 +25,7 @@ export default function InvestmentImportPage() {
   const role = getSessionRole()
   const lockedProjectIds = new Set(projects.filter((project) => isProjectFinalized(project.id) && !canAdminEdit(role)).map((project) => project.id))
   const projectIds = useMemo(() => new Set(projects.map(({ id }) => id)), [projects])
-  const unmappedOrders = result === null ? [] : [...new Set(result.rows.map(({ orderId }) => orderId).filter((orderId) => !projectIds.has(orderMappings[orderId] ?? '')))]
+  const ordersForMapping = result === null ? [] : [...new Set(result.rows.map(({ orderId }) => orderId))]
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? [])
@@ -50,6 +50,6 @@ export default function InvestmentImportPage() {
   function cancelPreview() { setResult(null); setOrderMappings({ ...mappingsFromProjects(projects), ...mappingsFromStorage() }); setConfirmError('') }
 
   return <main className="page-shell"><header className="page-heading"><div><p className="eyebrow">Excel Data Intake</p><h1>투자비 가져오기</h1></div><p>여러 파일을 검증하고 투자비를 사업별로 반영합니다.</p></header>
-    {result === null ? <section className="import-upload-panel" aria-labelledby="upload-title"><h2 id="upload-title">엑셀 파일 선택</h2><p>사업별 파일을 여러 번 업로드하고 각각 확정할 수 있습니다.</p><label className="file-picker">엑셀 파일<input type="file" accept=".xlsx,.xls" multiple onChange={handleFiles} /></label>{isReading ? <p role="status">파일을 분석하고 있습니다.</p> : null}{readError ? <p className="status-warning" role="alert">{readError}</p> : null}{completed ? <p className="success-message" role="status">투자비 가져오기가 완료되었습니다.</p> : null}</section> : <><ImportPreview result={result} onConfirm={confirmImport} onCancel={cancelPreview} />{confirmError ? <p className="status-warning" role="alert">{confirmError}</p> : null}<OrderMappingTable orders={unmappedOrders} projects={projects} onMap={(orderId, projectId) => setOrderMappings((current) => ({ ...current, [orderId]: projectId }))} disabledProjectIds={lockedProjectIds} /></>}
+    {result === null ? <section className="import-upload-panel" aria-labelledby="upload-title"><h2 id="upload-title">엑셀 파일 선택</h2><p>사업별 파일을 여러 번 업로드하고 각각 확정할 수 있습니다.</p><label className="file-picker">엑셀 파일<input type="file" accept=".xlsx,.xls" multiple onChange={handleFiles} /></label>{isReading ? <p role="status">파일을 분석하고 있습니다.</p> : null}{readError ? <p className="status-warning" role="alert">{readError}</p> : null}{completed ? <p className="success-message" role="status">투자비 가져오기가 완료되었습니다.</p> : null}</section> : <><ImportPreview result={result} onConfirm={confirmImport} onCancel={cancelPreview} />{confirmError ? <p className="status-warning" role="alert">{confirmError}</p> : null}<OrderMappingTable orders={ordersForMapping} projects={projects} mappings={orderMappings} onMap={(orderId, projectId) => setOrderMappings((current) => ({ ...current, [orderId]: projectId }))} disabledProjectIds={lockedProjectIds} /></>}
   </main>
 }

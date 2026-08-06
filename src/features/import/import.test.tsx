@@ -142,7 +142,7 @@ describe('투자비 가져오기', () => {
     expect(screen.getByRole('region', { name: '중복 행' })).toHaveTextContent(
       '두번째.xlsx:2',
     )
-    expect(screen.getByRole('region', { name: '미연결 오더' })).toHaveTextContent(
+    expect(screen.getByRole('region', { name: '투자오더 사업 연결' })).toHaveTextContent(
       'ORDER-NEW',
     )
     expect(new InvestmentRepository(localStorage).listTransactions()).toEqual([
@@ -161,7 +161,7 @@ describe('투자비 가져오기', () => {
     renderImportPage()
     await selectImportFiles()
 
-    const mappingRegion = screen.getByRole('region', { name: '미연결 오더' })
+    const mappingRegion = screen.getByRole('region', { name: '투자오더 사업 연결' })
     fireEvent.change(
       within(mappingRegion).getByRole('combobox', {
         name: 'ORDER-NEW 연결 사업',
