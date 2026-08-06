@@ -636,6 +636,36 @@ a {
 .legend-dot--approval { background: #9eb7c9; }
 .legend-dot--cumulative { background: #35b6b0; }
 
+.management-panel td:last-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.management-panel td:last-child .text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #c8d6e2;
+  border-radius: 8px;
+  background: #fff;
+  color: #174c73;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.management-panel td:last-child .text-button:hover,
+.management-panel td:last-child .text-button:focus-visible {
+  border-color: #178096;
+  background: #edf9f8;
+}
+
 .project-facts__investment dd {
   font-size: 1.05rem;
 }
