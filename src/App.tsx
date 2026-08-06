@@ -8,6 +8,8 @@ import DashboardPage from './features/dashboard/DashboardPage'
 import InvestmentImportPage from './features/import/InvestmentImportPage'
 import ProjectManagePage from './features/manage/ProjectManagePage'
 import ProjectDetailPage from './features/projects/ProjectDetailPage'
+import CloudSyncGate from './components/CloudSyncGate'
+import { isSupabaseConfigured } from './services/supabaseClient'
 
 function ProtectedLayout() {
   const location = useLocation()
@@ -24,7 +26,7 @@ function ManageRoute({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  return (
+  const routes = (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<ProtectedLayout />}>
@@ -36,4 +38,5 @@ export default function App() {
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
+  return isSupabaseConfigured ? <CloudSyncGate>{routes}</CloudSyncGate> : routes
 }

@@ -7,6 +7,7 @@ import { canAdminEdit, getSessionRole } from '../auth/authStore'
 import { finalizeProject, isProjectFinalized } from '../auth/workflowStore'
 import ImportPreview from './ImportPreview'
 import OrderMappingTable from './OrderMappingTable'
+import { syncLocalDataToCloud } from '../../services/cloudSync'
 
 function mappingsFromProjects(projects: Project[]): Record<string, string> { return Object.fromEntries(projects.flatMap((project) => project.orderIds.map((orderId) => [orderId, project.id]))) }
 function mappingsFromStorage(storage: Storage = localStorage): Record<string, string> { try { return JSON.parse(storage.getItem(ORDER_MAPPINGS_STORAGE_KEY) ?? '{}') as Record<string, string> } catch { return {} } }
@@ -43,6 +44,7 @@ export default function InvestmentImportPage() {
     investmentRepository.replaceTransactions([...mergedTransactions.values()]); investmentRepository.replaceOrderMappings(combinedMappings)
     for (const project of projects) { const ids = Object.entries(combinedMappings).filter(([, id]) => id === project.id).map(([id]) => id); const next = [...new Set([...project.orderIds, ...ids])]; if (next.length !== project.orderIds.length) projectRepository.save({ ...project, orderIds: next }) }
     for (const projectId of new Set(mappedRows.map(({ orderId }) => validMappings[orderId]))) finalizeProject(projectId)
+    void syncLocalDataToCloud()
     setResult(null); setConfirmError(''); setCompleted(true)
   }
   function cancelPreview() { setResult(null); setOrderMappings({ ...mappingsFromProjects(projects), ...mappingsFromStorage() }); setConfirmError('') }

@@ -10,6 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.1",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",

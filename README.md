@@ -52,6 +52,10 @@ npm run build
 
 현재는 브라우저의 `localStorage`와 `sessionStorage`를 사용하는 시연용 구조입니다. 운영 전환 시 다음 항목을 회사 시스템 또는 서버 API로 교체해야 합니다.
 
+### Supabase 연동
+
+현재 배포 환경은 Supabase Auth와 데이터 저장소를 사용하도록 연결되어 있습니다. 로컬 실행 시 `.env.example`을 `.env.local`로 복사하고 Supabase 프로젝트 URL과 publishable key를 입력하세요. 첫 계정은 Supabase Auth에서 등록한 뒤 로그인하며, 기본 역할은 조회자(viewer)입니다. 관리자·실무담당자 역할은 `public.user_roles`에서 관리자가 지정해야 합니다.
+
 - 사내 SSO·사번 인증
 - 사용자 권한 및 사업 데이터 저장
 - 투자오더번호 조회
