@@ -14,7 +14,7 @@ export async function loadSafetyKnowledge(): Promise<{ documents: SafetyDocument
   if (documentsResult.error || chunksResult.error || !documentsResult.data?.length) {
     return { documents: DEMO_SAFETY_DOCUMENTS, chunks: DEMO_SAFETY_CHUNKS, source: 'demo' }
   }
-  const documents = (documentsResult.data as CloudDocument[]).map(({ source_group, source_date, ...document }) => ({ ...document, sourceGroup: source_group, sourceDate: source_date }))
+  const documents = (documentsResult.data as CloudDocument[]).map(({ source_group, source_date, source_name, ...document }) => ({ ...document, sourceName: source_name, sourceGroup: source_group, sourceDate: source_date }))
   const chunks = (chunksResult.data as CloudChunk[]).map(({ document_id, ...chunk }) => ({ ...chunk, documentId: document_id }))
   return { documents, chunks, source: 'cloud' }
 }
