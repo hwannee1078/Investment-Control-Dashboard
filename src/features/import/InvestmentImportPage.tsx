@@ -3,8 +3,8 @@ import { InvestmentRepository, ORDER_MAPPINGS_STORAGE_KEY } from '../../data/inv
 import { ProjectRepository } from '../../data/projectRepository'
 import type { Project } from '../../domain/project'
 import { parseWorkbookFiles, type ImportResult } from '../../services/investmentImport'
-import { canAdminEdit, getSessionRole } from '../auth/authStore'
-import { finalizeProject, isProjectFinalized } from '../auth/workflowStore'
+import { getSessionRole } from '../auth/authStore'
+import { finalizeProject } from '../auth/workflowStore'
 import ImportPreview from './ImportPreview'
 import OrderMappingTable from './OrderMappingTable'
 import { syncLocalDataToCloud } from '../../services/cloudSync'
@@ -23,7 +23,9 @@ export default function InvestmentImportPage() {
   const [confirmError, setConfirmError] = useState('')
   const [completed, setCompleted] = useState(false)
   const role = getSessionRole()
-  const lockedProjectIds = new Set(projects.filter((project) => isProjectFinalized(project.id) && !canAdminEdit(role)).map((project) => project.id))
+  // 실무담당자는 확정 이후에도 다음 달 실적 파일을 계속 업로드할 수 있다.
+  // 관리자만 활성화/비활성화 및 강제 수정 권한을 별도로 가진다.
+  const lockedProjectIds = new Set<string>()
   const projectIds = useMemo(() => new Set(projects.map(({ id }) => id)), [projects])
   const ordersForMapping = result === null ? [] : [...new Set(result.rows.map(({ orderId }) => orderId))]
 
