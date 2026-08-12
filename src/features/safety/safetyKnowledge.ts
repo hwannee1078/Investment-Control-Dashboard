@@ -157,7 +157,7 @@ export const retrieveSafetyAnswer = (
 
   return {
     question,
-    answer: matches.map(({ chunk }) => chunk.content).join('\n\n'),
+    answer: `질문하신 “${question}”에 대해 승인된 공식자료에서 확인되는 내용입니다.\n\n${matches.map(({ chunk }) => chunk.content).join('\n\n')}\n\n위 내용은 검색된 근거를 요약한 것이며, 실제 적용 전 원문과 최신 시행일을 확인하세요.`,
     hasEvidence: true,
     citations,
   }

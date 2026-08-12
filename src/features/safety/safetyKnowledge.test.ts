@@ -11,6 +11,8 @@ describe('retrieveSafetyAnswer', () => {
 
     expect(answer.hasEvidence).toBe(true)
     expect(answer.citations.length).toBeGreaterThan(0)
+    expect(answer.answer).toContain('질문하신')
+    expect(answer.answer).toContain('검색된 근거')
     expect(answer.citations.every((citation) => citation.status === 'approved')).toBe(true)
     expect(answer.citations.every((citation) => citation.url.startsWith('https://'))).toBe(true)
   })
