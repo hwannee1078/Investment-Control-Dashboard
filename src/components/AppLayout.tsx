@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { canManage, getSessionRole } from '../features/auth/authStore'
+import FloatingSafetyChatbot from '../features/safety/FloatingSafetyChatbot'
 
 export default function AppLayout() {
   const role = getSessionRole()
@@ -19,6 +20,7 @@ export default function AppLayout() {
           <NavLink to="/safety">안전규정</NavLink>
         </nav>
       </header>
+      <FloatingSafetyChatbot />
       <Outlet />
     </div>
   )
