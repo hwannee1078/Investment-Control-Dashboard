@@ -282,6 +282,28 @@ a {
   box-shadow: 0 12px 32px rgb(34 57 83 / 6%);
 }
 
+.safety-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr); gap: 20px; }
+.safety-chat-panel, .safety-doc-panel { padding: 24px; border: 1px solid #e1e7ee; border-radius: 16px; background: #fff; }
+.safety-examples { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0; align-items: center; color: #68768a; font-size: .82rem; }
+.safety-examples button { padding: 8px 11px; border: 1px solid #d7e1ea; border-radius: 99px; color: #23435f; background: #f7fafc; cursor: pointer; }
+.safety-question-form { display: grid; gap: 8px; }
+.safety-question-form > div { display: flex; gap: 8px; }
+.safety-question-form input, .safety-upload-form input { min-width: 0; flex: 1; padding: 12px; border: 1px solid #cad3df; border-radius: 9px; }
+.safety-question-form .primary-button { margin-top: 0; }
+.safety-answer { min-height: 190px; margin-top: 20px; padding: 20px; border-radius: 12px; background: #f4f8fb; line-height: 1.75; }
+.safety-citations { display: grid; gap: 8px; margin-top: 20px; }
+.safety-citations h3 { margin: 0; font-size: .95rem; }
+.safety-citations a { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid #dce6ee; border-radius: 9px; color: #1b5870; text-decoration: none; background: #fff; }
+.safety-citations span, .safety-document-list span { color: #6b7c8e; font-size: .78rem; }
+.safety-disclaimer { margin: 16px 0 0; color: #8a5f27; font-size: .78rem; }
+.safety-document-list { display: grid; gap: 10px; padding: 0; margin: 20px 0; list-style: none; }
+.safety-document-list li { display: grid; gap: 3px; padding: 12px; border: 1px solid #e1e7ee; border-radius: 10px; }
+.safety-document-list em { justify-self: start; padding: 3px 8px; border-radius: 99px; color: #176b5d; background: #e5f5f1; font-size: .72rem; font-style: normal; }
+.safety-upload-form { display: grid; gap: 8px; padding-top: 18px; border-top: 1px solid #e5ebf1; }
+.safety-upload-form h3 { margin: 0 0 4px; font-size: 1rem; }
+.secondary-button { padding: 10px 12px; border: 1px solid #8db5c2; border-radius: 9px; color: #145b69; background: #f4fbfc; cursor: pointer; font-weight: 700; }
+@media (max-width: 760px) { .safety-layout { grid-template-columns: 1fr; } .safety-chat-panel, .safety-doc-panel { padding: 18px; } .safety-question-form > div { flex-direction: column; } }
+
 .metric-subtext {
   margin: -14px 0 20px;
   color: #718094;
