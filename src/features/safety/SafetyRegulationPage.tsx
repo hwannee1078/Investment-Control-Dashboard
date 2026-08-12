@@ -1,12 +1,18 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { canManage, getSessionRole } from '../auth/authStore'
 import { DEMO_SAFETY_DOCUMENTS, retrieveSafetyAnswer } from './safetyKnowledge'
+import type { SafetyChunk, SafetyDocument } from './safetyTypes'
+import { loadSafetyKnowledge } from './safetyCloud'
 
 export default function SafetyRegulationPage() {
   const role = getSessionRole()
   const [question, setQuestion] = useState('')
   const [submitted, setSubmitted] = useState('위험성평가 기준')
-  const answer = useMemo(() => retrieveSafetyAnswer(submitted), [submitted])
+  const [documents, setDocuments] = useState<SafetyDocument[]>(DEMO_SAFETY_DOCUMENTS)
+  const [chunks, setChunks] = useState<SafetyChunk[]>([])
+  const [knowledgeSource, setKnowledgeSource] = useState<'cloud' | 'demo'>('demo')
+  useEffect(() => { void loadSafetyKnowledge().then((knowledge) => { setDocuments(knowledge.documents); setChunks(knowledge.chunks); setKnowledgeSource(knowledge.source) }) }, [])
+  const answer = useMemo(() => retrieveSafetyAnswer(submitted, documents, chunks.length ? chunks : undefined), [submitted, documents, chunks])
   const [pendingTitle, setPendingTitle] = useState('')
   const [pendingSource, setPendingSource] = useState('')
   const [pending, setPending] = useState<string[]>([])
@@ -21,7 +27,7 @@ export default function SafetyRegulationPage() {
         <article className="safety-answer" aria-live="polite"><p className="eyebrow">검색 결과</p><p>{answer.answer}</p>{answer.hasEvidence ? <div className="safety-citations"><h3>근거 문서</h3>{answer.citations.map((citation) => <a key={`${citation.title}-${citation.section}`} href={citation.url} target="_blank" rel="noreferrer"><strong>{citation.title}</strong><span>{citation.section} · 기준일 {citation.sourceDate}</span></a>)}</div> : null}</article>
         <p className="safety-disclaimer">본 답변은 참고용이며, 최종 판단은 회사 안전·법무 담당자와 확인하세요.</p>
       </div>
-      <aside className="safety-doc-panel"><div className="panel-heading"><div><h2>문서 현황</h2><p>승인된 문서만 검색됩니다.</p></div></div><ul className="safety-document-list">{DEMO_SAFETY_DOCUMENTS.map((document) => <li key={document.id}><strong>{document.title}</strong><span>{document.sourceGroup} · {document.sourceDate}</span><em>{document.status === 'approved' ? '승인됨' : '검토중'}</em></li>)}</ul>{canManage(role) ? <form className="safety-upload-form" onSubmit={submitDocument}><h3>사내자료 등록 요청</h3><input value={pendingTitle} onChange={(event) => setPendingTitle(event.target.value)} placeholder="문서명" aria-label="문서명" /><input value={pendingSource} onChange={(event) => setPendingSource(event.target.value)} placeholder="원문 URL(선택)" aria-label="원문 URL" /><button className="secondary-button" type="submit">검토 요청</button>{pending.length ? <p role="status">검토 대기 {pending.length}건</p> : null}</form> : null}</aside>
+      <aside className="safety-doc-panel"><div className="panel-heading"><div><h2>문서 현황</h2><p>승인된 문서만 검색됩니다. ({knowledgeSource === 'cloud' ? '서버 문서' : '시연 문서'})</p></div></div><ul className="safety-document-list">{documents.map((document) => <li key={document.id}><strong>{document.title}</strong><span>{document.sourceGroup} · {document.sourceDate}</span><em>{document.status === 'approved' ? '승인됨' : '검토중'}</em></li>)}</ul>{canManage(role) ? <form className="safety-upload-form" onSubmit={submitDocument}><h3>사내자료 등록 요청</h3><input value={pendingTitle} onChange={(event) => setPendingTitle(event.target.value)} placeholder="문서명" aria-label="문서명" /><input value={pendingSource} onChange={(event) => setPendingSource(event.target.value)} placeholder="원문 URL(선택)" aria-label="원문 URL" /><button className="secondary-button" type="submit">검토 요청</button>{pending.length ? <p role="status">검토 대기 {pending.length}건</p> : null}</form> : null}</aside>
     </section>
   </main>
 }
