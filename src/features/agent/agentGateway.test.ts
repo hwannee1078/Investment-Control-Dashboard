@@ -36,6 +36,27 @@ function gatewayWithTools() {
 }
 
 describe('agent gateway', () => {
+  it('routes a Korean fetch request to read-only investment analysis', async () => {
+    const findInvestmentAnomalies = vi.fn(async () => answer())
+    const gateway = createAgentGateway({ tools: { findInvestmentAnomalies } })
+
+    const response = await gateway(request('프로젝트 A 투자비를 가져와줘'), { ...context, role: 'staff' })
+
+    expect(findInvestmentAnomalies).toHaveBeenCalledOnce()
+    expect(response.toolTrace).toEqual([{ name: 'findInvestmentAnomalies', status: 'ok' }])
+    expect(response.draftAction).toBeUndefined()
+  })
+
+  it('returns the deterministic unsupported draft response only for explicit mutation language', async () => {
+    const gateway = createAgentGateway()
+
+    const response = await gateway(request('프로젝트 A 일정 변경을 반영해줘'), { ...context, role: 'staff' })
+
+    expect(response.draft).toBeUndefined()
+    expect(response.draftAction).toEqual({ available: false, reason: 'PENDING_DRAFT_STORAGE_UNAVAILABLE' })
+    expect(response.toolTrace).toEqual([{ name: 'prepareDraft', status: 'error' }])
+  })
+
   it.each([
     ['이번 달 투자비 이상 징후를 분석해줘', 'findInvestmentAnomalies'],
     ['project-1의 2026-07 투자비 차이를 설명해줘', 'explainVariance'],

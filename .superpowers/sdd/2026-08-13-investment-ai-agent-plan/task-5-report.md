@@ -19,3 +19,8 @@
 - It does not reconstruct client-provided draft content or use an unsafe in-memory resolver. The response explicitly states that draft persistence is unavailable and reports `prepareDraft` as an error.
 - `AgentDraftCard` exposes approve/cancel controls only when the gateway explicitly marks the returned draft action as available; staff/admin receive a clear unavailable notice for non-actionable drafts.
 - Added a production-path UI regression test that connects `AgentPage` to the default gateway for a Korean write request, asserts no approve/cancel controls, and verifies viewer write intent remains blocked.
+
+## Fix round 2
+
+- Narrowed write-intent detection to explicit draft creation, approval, registration, or mutation language. Read-only requests containing `가져와` now continue through the analysis tools.
+- Added gateway regressions for a Korean read-only fetch request and an explicit change-application request.

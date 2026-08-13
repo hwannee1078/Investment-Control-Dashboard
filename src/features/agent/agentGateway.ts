@@ -124,7 +124,7 @@ function latestQuestion(request: AgentRequest): string {
 }
 
 function isWriteIntent(question: string): boolean {
-  return /(초안|저장해|등록해|가져와)/.test(question)
+  return /(?:초안(?:을|를)?\s*(?:만들|작성|생성|저장|승인)|(?:변경|수정|확정|업데이트)[^.!?]{0,16}(?:반영|저장|승인)|(?:저장|등록)\s*(?:해|하여|하세요|해주세요|해줘))/.test(question)
 }
 
 function routeQuestion(question: string): AgentToolName {
