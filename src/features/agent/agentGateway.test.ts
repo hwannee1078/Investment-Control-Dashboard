@@ -58,6 +58,38 @@ describe('agent gateway', () => {
   })
 
   it.each([
+    '프로젝트 A 일정을 변경해줘',
+    '프로젝트 A 투자비를 수정해줘',
+    '프로젝트 A 투자비를 확정해줘',
+    '프로젝트 A 투자비를 저장해줘',
+    '프로젝트 A 일정에 반영해줘',
+    '프로젝트 A 일정을 업데이트해줘',
+    '프로젝트 A 투자비를 등록해줘',
+  ])('rejects explicit mutation command %s when durable draft storage is unavailable', async (content) => {
+    const response = await createAgentGateway()(request(content), { ...context, role: 'staff' })
+
+    expect(response.draft).toBeUndefined()
+    expect(response.draftAction).toEqual({ available: false, reason: 'PENDING_DRAFT_STORAGE_UNAVAILABLE' })
+    expect(response.toolTrace).toEqual([{ name: 'prepareDraft', status: 'error' }])
+  })
+
+  it.each([
+    '프로젝트 A 투자비를 가져와줘',
+    '프로젝트 A 투자비를 보여줘',
+    '프로젝트 A 투자비를 조회해줘',
+    '프로젝트 A 투자비를 분석해줘',
+  ])('routes read-only command %s to analysis', async (content) => {
+    const findInvestmentAnomalies = vi.fn(async () => answer())
+    const gateway = createAgentGateway({ tools: { findInvestmentAnomalies } })
+
+    const response = await gateway(request(content), { ...context, role: 'staff' })
+
+    expect(findInvestmentAnomalies).toHaveBeenCalledOnce()
+    expect(response.toolTrace).toEqual([{ name: 'findInvestmentAnomalies', status: 'ok' }])
+    expect(response.draftAction).toBeUndefined()
+  })
+
+  it.each([
     ['이번 달 투자비 이상 징후를 분석해줘', 'findInvestmentAnomalies'],
     ['project-1의 2026-07 투자비 차이를 설명해줘', 'explainVariance'],
     ['2026년 경영진 투자비 브리핑을 만들어줘', 'getExecutiveBriefing'],

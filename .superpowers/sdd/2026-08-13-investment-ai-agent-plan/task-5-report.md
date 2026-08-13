@@ -24,3 +24,8 @@
 
 - Narrowed write-intent detection to explicit draft creation, approval, registration, or mutation language. Read-only requests containing `가져와` now continue through the analysis tools.
 - Added gateway regressions for a Korean read-only fetch request and an explicit change-application request.
+
+## Fix round 3
+
+- Expanded the explicit mutation classifier to recognize direct imperative forms of change, edit, finalize, save, apply, update, and register requests.
+- Added table-driven gateway regressions for all supported mutation imperatives and for fetch, show, lookup, and analysis read-only requests.
