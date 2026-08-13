@@ -57,6 +57,7 @@ describe('AgentPage', () => {
     mockGateway({
       message: { answer: '검토할 초안을 만들었습니다.', intent: 'schedule-analysis', citations: [], evidence: [], hasEvidence: false },
       draft,
+      draftAction: { available: true },
       toolTrace: [{ name: 'prepareScheduleUpdate', status: 'ok' }],
     })
     render(<MemoryRouter><AgentPage /></MemoryRouter>)

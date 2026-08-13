@@ -12,6 +12,7 @@ type ConversationItem = {
   question: string
   answer?: AgentAnswer
   draft?: AgentDraft
+  draftAction?: AgentResponse['draftAction']
   toolTrace?: AgentResponse['toolTrace']
 }
 
@@ -46,7 +47,7 @@ export default function AgentPage() {
     setConversation((items) => [...items, { id, question }])
     try {
       const response = await requestAgent({ conversation: [{ role: 'user', content: question }] })
-      setConversation((items) => items.map((item) => item.id === id ? { ...item, answer: response.message, draft: response.draft, toolTrace: response.toolTrace } : item))
+      setConversation((items) => items.map((item) => item.id === id ? { ...item, answer: response.message, draft: response.draft, draftAction: response.draftAction, toolTrace: response.toolTrace } : item))
     } catch (requestError) {
       setError(errorMessage(requestError))
     } finally {
@@ -66,6 +67,7 @@ export default function AgentPage() {
         ...item,
         answer: response.message,
         draft: response.draft ?? { ...draft, status: type === 'approve-draft' ? 'approved' : 'cancelled' },
+        draftAction: response.draftAction,
         toolTrace: response.toolTrace,
       } : item))
     } catch (requestError) {
@@ -86,7 +88,7 @@ export default function AgentPage() {
             <CitationList answer={item.answer} />
             {item.toolTrace?.length ? <ul className="agent-tool-trace" aria-label="도구 처리 상태">{item.toolTrace.map((tool) => <li key={`${tool.name}-${tool.status}`} className={tool.status === 'ok' ? 'is-ok' : 'is-error'}>{tool.name} · {tool.status === 'ok' ? '완료' : '오류'}</li>)}</ul> : null}
           </div> : null}
-          {item.draft ? <AgentDraftCard draft={item.draft} role={role} isWorking={activeDraftId === item.draft.id} onApprove={() => void actOnDraft(item.draft!, 'approve-draft')} onCancel={() => void actOnDraft(item.draft!, 'cancel-draft')} /> : null}
+          {item.draft ? <AgentDraftCard draft={item.draft} role={role} isActionable={item.draftAction?.available === true} isWorking={activeDraftId === item.draft.id} onApprove={() => void actOnDraft(item.draft!, 'approve-draft')} onCancel={() => void actOnDraft(item.draft!, 'cancel-draft')} /> : null}
         </article>)}</div>
       <AgentComposer onSubmit={submit} isLoading={isLoading} error={error} />
     </section>

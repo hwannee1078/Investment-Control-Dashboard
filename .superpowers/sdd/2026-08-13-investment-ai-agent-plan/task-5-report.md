@@ -1,15 +1,21 @@
 # Task 5 report
 
-## 구현
+## Implementation
 
-- `/agent` 보호 라우트와 한국어 AI Agent 분석 화면을 추가했습니다.
-- Agent 응답의 근거, 안전 문서 인용, 도구 실행 상태, 오류·로딩 상태를 표시합니다.
-- 초안 카드는 역할이 `staff` 또는 `admin`일 때만 승인·취소 버튼을 표시하며, 모든 요청은 `/api/agent` 게이트웨이로 보냅니다.
-- 부동 안전 챗봇은 통합 AI Agent 게이트웨이를 사용하도록 전환했고, 안전 답변의 인용 링크와 전체 분석 화면 링크를 유지했습니다.
-- Agent 컴포넌트는 저장소나 Supabase 리포지터리를 직접 호출하지 않습니다.
+- Added the protected `/agent` route and Korean AI Agent analysis UI.
+- The Agent UI renders evidence, safety citations, tool states, loading, and errors. It calls only the `/api/agent` gateway.
+- The floating safety chat uses the unified gateway and retains citation links and a full-screen analysis link.
+- Agent components do not call repositories or Supabase repositories directly.
 
-## 검증
+## Verification
 
-- `npm test -- --run src/features/agent/AgentPage.test.tsx src/features/safety/FloatingSafetyChatbot.test.tsx src/app-flow.test.tsx` — 5 passed
-- `npm run build` — passed (기존 Vite 번들 크기 권고만 출력)
-- `git diff --check` — passed
+- Focused UI and app-flow tests passed.
+- Production build passed; Vite reported only the existing bundle-size advisory.
+- `git diff --check` passed.
+
+## Fix round 1
+
+- The production gateway now recognizes draft/write intent and returns a typed `draftAction` state with `available: false` when a durable, server-owned pending-draft store is unavailable.
+- It does not reconstruct client-provided draft content or use an unsafe in-memory resolver. The response explicitly states that draft persistence is unavailable and reports `prepareDraft` as an error.
+- `AgentDraftCard` exposes approve/cancel controls only when the gateway explicitly marks the returned draft action as available; staff/admin receive a clear unavailable notice for non-actionable drafts.
+- Added a production-path UI regression test that connects `AgentPage` to the default gateway for a Korean write request, asserts no approve/cancel controls, and verifies viewer write intent remains blocked.

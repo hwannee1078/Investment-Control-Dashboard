@@ -5,6 +5,7 @@ type AgentDraftCardProps = {
   role: AgentRole
   onApprove: () => void
   onCancel: () => void
+  isActionable?: boolean
   isWorking?: boolean
 }
 
@@ -14,7 +15,7 @@ function displayValue(value: unknown): string {
   return JSON.stringify(value)
 }
 
-export default function AgentDraftCard({ draft, role, onApprove, onCancel, isWorking = false }: AgentDraftCardProps) {
+export default function AgentDraftCard({ draft, role, onApprove, onCancel, isActionable = false, isWorking = false }: AgentDraftCardProps) {
   const canSave = role === 'staff' || role === 'admin'
   return <article className="agent-draft-card" aria-label="Agent 작업 초안">
     <header>
@@ -33,7 +34,8 @@ export default function AgentDraftCard({ draft, role, onApprove, onCancel, isWor
         <strong>{validation.passed ? '통과' : '확인 필요'}</strong> {validation.message}
       </li>)}
     </ul>
-    {canSave && draft.status === 'pending' ? <div className="agent-draft-actions">
+    {canSave && !isActionable ? <p className="agent-draft-unavailable">이 초안은 서버에 안전하게 보관되지 않아 승인하거나 저장할 수 없습니다.</p> : null}
+    {canSave && isActionable && draft.status === 'pending' ? <div className="agent-draft-actions">
       <button className="secondary-button" type="button" onClick={onCancel} disabled={isWorking}>초안 취소</button>
       <button className="primary-button" type="button" onClick={onApprove} disabled={isWorking || !draft.validations.every(({ passed }) => passed)}>{isWorking ? '처리 중…' : '초안 승인'}</button>
     </div> : null}

@@ -18,6 +18,10 @@ export interface AgentRequest {
 export interface AgentResponse {
   message: AgentAnswer
   draft?: AgentDraft
+  draftAction?: {
+    available: boolean
+    reason?: 'PENDING_DRAFT_STORAGE_UNAVAILABLE'
+  }
   toolTrace: Array<{ name: string; status: 'ok' | 'error' }>
 }
 
@@ -117,6 +121,10 @@ function validateRequest(request: AgentRequest): void {
 function latestQuestion(request: AgentRequest): string {
   return [...request.conversation].reverse()
     .find((message) => message.role === 'user')?.content.trim() ?? ''
+}
+
+function isWriteIntent(question: string): boolean {
+  return /(초안|저장해|등록해|가져와)/.test(question)
 }
 
 function routeQuestion(question: string): AgentToolName {
@@ -239,6 +247,13 @@ export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) 
     }
 
     const question = latestQuestion(request)
+    if (isWriteIntent(question)) {
+      return {
+        message: noEvidenceAnswer('초안 저장은 현재 지원되지 않습니다. 안전한 서버 측 초안 보관 기능이 준비되면 승인 절차를 제공하겠습니다.'),
+        draftAction: { available: false, reason: 'PENDING_DRAFT_STORAGE_UNAVAILABLE' },
+        toolTrace: [{ name: 'prepareDraft', status: 'error' }],
+      }
+    }
     let selected: { name: string; input?: unknown }
     try {
       selected = dependencies.provider === undefined
