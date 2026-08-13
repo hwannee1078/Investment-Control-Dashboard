@@ -31,3 +31,23 @@ passed
 ```
 
 Vite emitted its existing bundle-size advisory for a JavaScript chunk over 500 kB; it did not fail the build.
+
+## Fix round 1 — authorization and audit RLS
+
+- `prepareInvestmentImport` and `prepareScheduleUpdate` now reject `viewer` contexts with `FORBIDDEN` before reading or creating actionable drafts. The schedule preparation path retains and validates its context.
+- Added a regression test covering both viewer preparation paths and asserting that projects, transactions, and mappings remain unchanged.
+- The `agent_audit_logs` INSERT policy now requires `approved = true`, a staff/admin row value, and an independently verified staff/admin role from `public.user_roles` for the authenticated user. This prevents a client from self-assigning an elevated role or inserting an unapproved audit row.
+
+### Fix verification
+
+```text
+npm test -- --run src/features/agent/drafts/agentDraftService.test.ts
+Test Files  1 passed (1)
+Tests  6 passed (6)
+
+npm test -- --run
+Test Files  16 passed (16)
+Tests  81 passed (81)
+```
+
+`npm run build` was run but is presently blocked by five TypeScript function-variance errors in concurrent, uncommitted Task 4 files (`src/features/agent/agentGateway.ts:175-179`). The Task 3 files report no TypeScript errors in this build output; a full build must be re-run after the Task 4 changes are corrected.

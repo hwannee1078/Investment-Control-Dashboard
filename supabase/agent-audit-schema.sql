@@ -18,7 +18,16 @@ alter table public.agent_audit_logs enable row level security;
 
 create policy "users can insert their own agent audit records"
   on public.agent_audit_logs for insert to authenticated
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and approved = true
+    and role in ('staff', 'admin')
+    and exists (
+      select 1 from public.user_roles
+      where user_id = auth.uid()
+        and role in ('staff', 'admin')
+    )
+  );
 
 create policy "users can read their own agent audit records"
   on public.agent_audit_logs for select to authenticated

@@ -47,6 +47,26 @@ describe('agent draft service', () => {
     expect(auditRows()).toEqual([])
   })
 
+  it('rejects viewer draft preparation without changing repositories', async () => {
+    seedProject()
+    const before = {
+      projects: localStorage.getItem('investment-dashboard.projects.v1'),
+      transactions: localStorage.getItem('investment-dashboard.transactions.v1'),
+      mappings: localStorage.getItem('investment-dashboard.order-mappings.v1'),
+    }
+
+    await expect(prepareInvestmentImport(viewer, {
+      sourceName: 'report.xlsx', projectId: 'project-1', transactions: [transaction(14, 500), transaction(15, 500)],
+    })).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(prepareScheduleUpdate(viewer, {
+      projectId: 'project-1', stage: PROJECT_STAGES[0], actual: '2026-08-01',
+    })).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+    expect(localStorage.getItem('investment-dashboard.projects.v1')).toBe(before.projects)
+    expect(localStorage.getItem('investment-dashboard.transactions.v1')).toBe(before.transactions)
+    expect(localStorage.getItem('investment-dashboard.order-mappings.v1')).toBe(before.mappings)
+  })
+
   it('allows staff to approve a reconciled investment import and records before and after data', async () => {
     seedProject()
     const draft = await prepareInvestmentImport(staff, {

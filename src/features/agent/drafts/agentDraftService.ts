@@ -72,10 +72,15 @@ function assertPendingAndAllowed(context: AgentToolContext, draft: AgentDraft): 
   }
 }
 
+function assertCanPrepareDraft(context: AgentToolContext): void {
+  if (context.role === 'viewer') throw new AgentDraftError('FORBIDDEN')
+}
+
 export async function prepareInvestmentImport(
   context: AgentToolContext,
   input: { sourceName: string; transactions: InvestmentTransaction[]; projectId: string },
 ): Promise<AgentDraft> {
+  assertCanPrepareDraft(context)
   const data = getAgentToolData()
   const project = data.projects.find(({ id }) => id === input.projectId)
   const reconciliation = await reconcileInvestmentWorkbook(context, {
@@ -115,9 +120,10 @@ export async function prepareInvestmentImport(
 }
 
 export async function prepareScheduleUpdate(
-  _context: AgentToolContext,
+  context: AgentToolContext,
   input: { projectId: string; stage: ProjectStage; actual: string; reason?: string | null },
 ): Promise<AgentDraft> {
+  assertCanPrepareDraft(context)
   const project = getAgentToolData().projects.find(({ id }) => id === input.projectId)
   const before = project?.schedule[input.stage]
   const actualIsValid = /^\d{4}-\d{2}-\d{2}$/.test(input.actual)
