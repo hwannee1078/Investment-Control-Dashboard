@@ -27,3 +27,38 @@ npm run build
 
 - Workbook reconciliation receives parsed transactions; it recognizes `rowId` values ending in `:14` (or `14`) for C14 and `:15` through `:108` for detail rows. The current workbook importer persists C14 only, so callers that need reconciliation must retain/pass the detail rows.
 - The existing production build continues to emit Vite's pre-existing chunk-size warning; it does not affect these read-only tools.
+
+## P1 fix report
+
+### Finding 1: production workbook reconciliation
+
+- Preserved the parser-computed `C15:C108` sum as optional `reconciliationDetailTotal` on the persisted C14 transaction record. Reconciliation now uses direct detail rows when supplied and otherwise uses that parser-produced evidence.
+- Added production-parser end-to-end regressions: a valid non-zero detail total reconciles successfully; a real mismatch returns `DETAIL_SUM_MISMATCH`.
+
+### Finding 2: executive annual aggregation
+
+- Replaced raw annual transaction summation with month-filtered values from `aggregateInvestment`, preserving duplicate suppression, order mapping, and valid-project filtering.
+- Added regression coverage proving duplicate and unmapped rows are excluded from the annual briefing total.
+
+### Changed files
+
+- `src/domain/investment.ts`
+- `src/services/investmentImport.ts`
+- `src/services/investmentImport.test.ts`
+- `src/features/agent/tools/investmentTools.ts`
+- `src/features/agent/tools/investmentTools.test.ts`
+
+### Tests and output
+
+```text
+npm test -- --run src/features/agent/tools/investmentTools.test.ts src/features/agent/tools/scheduleTools.test.ts src/services/investmentImport.test.ts src/services/investmentAggregation.test.ts
+Test Files  4 passed (4)
+Tests  25 passed (25)
+
+npm run build
+✓ built in 260ms
+```
+
+### Commit
+
+- `4110783` — `fix: preserve agent reconciliation evidence`
