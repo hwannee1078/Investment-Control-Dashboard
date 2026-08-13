@@ -10,6 +10,7 @@ import ProjectManagePage from './features/manage/ProjectManagePage'
 import ProjectDetailPage from './features/projects/ProjectDetailPage'
 import CloudSyncGate from './components/CloudSyncGate'
 import SafetyRegulationPage from './features/safety/SafetyRegulationPage'
+import AgentPage from './features/agent/AgentPage'
 import { isSupabaseConfigured } from './services/supabaseClient'
 
 function ProtectedLayout() {
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/manage" element={<ManageRoute><ProjectManagePage /></ManageRoute>} />
         <Route path="/import" element={<ManageRoute><InvestmentImportPage /></ManageRoute>} />
         <Route path="/safety" element={<SafetyRegulationPage />} />
+        <Route path="/agent" element={<AgentPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
