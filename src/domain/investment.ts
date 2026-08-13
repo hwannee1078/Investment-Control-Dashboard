@@ -4,6 +4,7 @@ export type InvestmentTransaction = {
   orderId: string
   month: string
   amount: number
+  reconciliationDetailTotal?: number
 }
 
 export type InvestmentSummary = {

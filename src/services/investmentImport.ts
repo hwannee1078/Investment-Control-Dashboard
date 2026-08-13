@@ -250,7 +250,14 @@ export async function parseWorkbookFiles(files: File[]): Promise<ImportResult> {
       }
 
       if (valid && month !== null && typeof amountValue === 'number') {
-        rows.push({ sourceId, rowId, orderId, month, amount: amountValue })
+        rows.push({
+          sourceId,
+          rowId,
+          orderId,
+          month,
+          amount: amountValue,
+          reconciliationDetailTotal: validationTotal,
+        })
       }
       continue
     }

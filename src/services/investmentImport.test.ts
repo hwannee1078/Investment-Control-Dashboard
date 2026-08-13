@@ -175,6 +175,7 @@ describe('parseWorkbookFiles', () => {
         orderId: '1006249',
         month: '2026-03',
         amount: 450,
+        reconciliationDetailTotal: 450,
       },
     ])
     expect(result.warnings).toEqual([])

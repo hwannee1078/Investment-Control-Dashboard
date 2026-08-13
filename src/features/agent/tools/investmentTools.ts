@@ -134,9 +134,9 @@ export async function getExecutiveBriefing(
 ): Promise<AgentAnswer> {
   const data = getAgentToolData()
   const summaries = aggregateInvestment(data.transactions, data.orderToProject, data.projects)
-  const selectedMonths = Object.entries(
-    Object.fromEntries(
-      [...summaries.values()].flatMap((summary) => Object.entries(summary.monthly)),
+  const selectedMonths = [...summaries.values()].flatMap((summary) =>
+    Object.keys(summary.monthly).filter((month) =>
+      input.year === undefined || month.startsWith(`${input.year}-`),
     ),
   )
   const totalActual = [...summaries.values()].reduce(
@@ -150,9 +150,13 @@ export async function getExecutiveBriefing(
   const yearLabel = input.year === undefined ? '전체' : `${input.year}년`
   const inYearActual = input.year === undefined
     ? totalActual
-    : data.transactions
-        .filter(({ month }) => month.startsWith(`${input.year}-`))
-        .reduce((total, row) => total + row.amount, 0)
+    : [...summaries.values()].reduce(
+        (total, summary) =>
+          total + Object.entries(summary.monthly)
+            .filter(([month]) => month.startsWith(`${input.year}-`))
+            .reduce((annual, [, amount]) => annual + amount, 0),
+        0,
+      )
 
   if (data.projects.length === 0 || selectedMonths.length === 0) {
     return noEvidence('경영진 브리핑을 만들 투자비 데이터가 없습니다.')
@@ -187,12 +191,17 @@ export async function reconcileInvestmentWorkbook(
   }
 
   const actual = actualRows.reduce((total, row) => total + row.amount, 0)
-  const detail = rows
+  const detailRows = rows
     .filter((row) => {
       const number = rowNumber(row)
       return number !== undefined && number >= 15 && number <= 108
     })
-    .reduce((total, row) => total + row.amount, 0)
+  const detail = detailRows.length > 0
+    ? detailRows.reduce((total, row) => total + row.amount, 0)
+    : actualRows.reduce(
+        (total, row) => total + (row.reconciliationDetailTotal ?? 0),
+        0,
+      )
   const difference = actual - detail
   const consistent = difference === 0
 
