@@ -10,7 +10,7 @@
 
 ## Commit hashes
 
-- Pending commit amendment with this report.
+- `410e3cf` — `feat: add read-only agent analysis tools`
 
 ## Test commands and output
 
