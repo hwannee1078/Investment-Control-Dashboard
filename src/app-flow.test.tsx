@@ -1,9 +1,19 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
+import { createAuthenticatedSession, type UserRole } from './features/auth/authStore'
 
 describe('app flow', () => {
   beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
+
+  it.each(['viewer', 'staff', 'admin'] as const)('allows a %s role to use the protected Agent route', (role: UserRole) => {
+    createAuthenticatedSession(role)
+
+    render(<MemoryRouter initialEntries={['/agent']}><App /></MemoryRouter>)
+
+    expect(screen.getByRole('heading', { name: 'AI Agent' })).toBeInTheDocument()
+  })
+
   it('logs in with employee id and shows dashboard', () => {
     render(<MemoryRouter initialEntries={['/login']}><App /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'viewer-001' } })
