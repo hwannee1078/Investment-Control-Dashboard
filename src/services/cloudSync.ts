@@ -4,6 +4,23 @@ import { PROJECTS_STORAGE_KEY } from '../data/projectRepository'
 import { PROJECT_FINALIZED_KEY } from '../features/auth/workflowStore'
 import { supabase } from './supabaseClient'
 
+export const AGENT_AUDIT_LOGS_STORAGE_KEY = 'investment-dashboard.agent-audit-logs.v1'
+
+export type AgentAuditLog = {
+  id: string
+  user_id: string
+  employee_id: string
+  role: UserRole
+  question: string
+  tool_name: string
+  target_project_id: string
+  before_data: unknown
+  after_data: unknown
+  approved: true
+  result_code: string
+  created_at: string
+}
+
 type CloudProjectRow = { id: string; data: unknown }
 type CloudTransactionRow = { source_id: string; row_id: string; data: unknown }
 type CloudMappingRow = { order_id: string; project_id: string }
@@ -27,6 +44,17 @@ export async function ensureCloudUserRole(userId: string, employeeId: string): P
   )
 }
 
+/** Persists audit data only after an approved Agent action, then asks cloud sync to upload it. */
+export async function recordApprovedAgentAuditLog(
+  audit: AgentAuditLog,
+  storage: Storage = localStorage,
+): Promise<void> {
+  if (!audit.approved) throw new Error('Only approved Agent actions can be audited')
+  const audits = parseJson<AgentAuditLog[]>(storage.getItem(AGENT_AUDIT_LOGS_STORAGE_KEY), [])
+  storage.setItem(AGENT_AUDIT_LOGS_STORAGE_KEY, JSON.stringify([...audits, audit]))
+  await syncLocalDataToCloud(storage)
+}
+
 export async function syncLocalDataToCloud(storage: Storage = localStorage): Promise<void> {
   if (!supabase) return
   const { data: sessionData } = await supabase.auth.getSession()
@@ -39,6 +67,7 @@ export async function syncLocalDataToCloud(storage: Storage = localStorage): Pro
   )
   const mappings = parseJson<Record<string, string>>(storage.getItem(ORDER_MAPPINGS_STORAGE_KEY), {})
   const finalizations = parseJson<Record<string, boolean>>(storage.getItem(PROJECT_FINALIZED_KEY), {})
+  const agentAuditLogs = parseJson<AgentAuditLog[]>(storage.getItem(AGENT_AUDIT_LOGS_STORAGE_KEY), [])
 
   if (projects.length) {
     const { error } = await supabase.from('projects').upsert(projects.map((data) => ({ id: (data as { id: string }).id, data })))
@@ -59,6 +88,10 @@ export async function syncLocalDataToCloud(storage: Storage = localStorage): Pro
   const finalizationRows = Object.entries(finalizations).filter(([, finalized]) => finalized).map(([project_id, finalized]) => ({ project_id, finalized }))
   if (finalizationRows.length) {
     const { error } = await supabase.from('project_finalizations').upsert(finalizationRows, { onConflict: 'project_id' })
+    if (error) throw error
+  }
+  if (agentAuditLogs.length) {
+    const { error } = await supabase.from('agent_audit_logs').upsert(agentAuditLogs, { onConflict: 'id' })
     if (error) throw error
   }
 }
