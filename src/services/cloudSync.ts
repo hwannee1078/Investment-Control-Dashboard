@@ -44,15 +44,15 @@ export async function ensureCloudUserRole(userId: string, employeeId: string): P
   )
 }
 
-/** Persists audit data only after an approved Agent action, then asks cloud sync to upload it. */
+/**
+ * Client-side Agent audit writes are intentionally disabled. Agent mutations may only be
+ * enabled with a server-owned transaction that derives identity and writes its audit row.
+ */
 export async function recordApprovedAgentAuditLog(
-  audit: AgentAuditLog,
-  storage: Storage = localStorage,
-): Promise<void> {
-  if (!audit.approved) throw new Error('Only approved Agent actions can be audited')
-  const audits = parseJson<AgentAuditLog[]>(storage.getItem(AGENT_AUDIT_LOGS_STORAGE_KEY), [])
-  storage.setItem(AGENT_AUDIT_LOGS_STORAGE_KEY, JSON.stringify([...audits, audit]))
-  await syncLocalDataToCloud(storage)
+  _audit: AgentAuditLog,
+  _storage: Storage = localStorage,
+): Promise<never> {
+  throw new Error('AGENT_WRITES_DISABLED')
 }
 
 export async function syncLocalDataToCloud(storage: Storage = localStorage): Promise<void> {
@@ -67,7 +67,6 @@ export async function syncLocalDataToCloud(storage: Storage = localStorage): Pro
   )
   const mappings = parseJson<Record<string, string>>(storage.getItem(ORDER_MAPPINGS_STORAGE_KEY), {})
   const finalizations = parseJson<Record<string, boolean>>(storage.getItem(PROJECT_FINALIZED_KEY), {})
-  const agentAuditLogs = parseJson<AgentAuditLog[]>(storage.getItem(AGENT_AUDIT_LOGS_STORAGE_KEY), [])
 
   if (projects.length) {
     const { error } = await supabase.from('projects').upsert(projects.map((data) => ({ id: (data as { id: string }).id, data })))
@@ -88,10 +87,6 @@ export async function syncLocalDataToCloud(storage: Storage = localStorage): Pro
   const finalizationRows = Object.entries(finalizations).filter(([, finalized]) => finalized).map(([project_id, finalized]) => ({ project_id, finalized }))
   if (finalizationRows.length) {
     const { error } = await supabase.from('project_finalizations').upsert(finalizationRows, { onConflict: 'project_id' })
-    if (error) throw error
-  }
-  if (agentAuditLogs.length) {
-    const { error } = await supabase.from('agent_audit_logs').upsert(agentAuditLogs, { onConflict: 'id' })
     if (error) throw error
   }
 }

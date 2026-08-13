@@ -67,23 +67,17 @@ describe('agent draft service', () => {
     expect(localStorage.getItem('investment-dashboard.order-mappings.v1')).toBe(before.mappings)
   })
 
-  it('allows staff to approve a reconciled investment import and records before and after data', async () => {
+  it('rejects a caller-supplied investment draft while transactional server approval is unavailable', async () => {
     seedProject()
     const draft = await prepareInvestmentImport(staff, {
       sourceName: 'report.xlsx', projectId: 'project-1', transactions: [transaction(14, 500), transaction(15, 200), transaction(16, 300)],
     })
     const before = localStorage.getItem('investment-dashboard.transactions.v1')
 
-    const result = await approveAgentDraft(staff, draft)
+    await expect(approveAgentDraft(staff, draft)).rejects.toMatchObject({ code: 'UNSUPPORTED_ACTION' })
 
-    expect(result.saved).toBe(true)
-    expect(result.auditId).not.toBe('')
-    expect(localStorage.getItem('investment-dashboard.transactions.v1')).not.toBe(before)
-    expect(auditRows()).toContainEqual(expect.objectContaining({
-      approved: true,
-      before_data: expect.anything(),
-      after_data: expect.anything(),
-    }))
+    expect(localStorage.getItem('investment-dashboard.transactions.v1')).toBe(before)
+    expect(auditRows()).toEqual([])
   })
 
   it('blocks an investment import with failed C14 to C15:C108 reconciliation', async () => {
@@ -112,15 +106,17 @@ describe('agent draft service', () => {
     await expect(approveAgentDraft(staff, draft)).rejects.toMatchObject({ code: 'DRAFT_CANCELLED' })
   })
 
-  it('saves a valid schedule draft through the project repository', async () => {
+  it('rejects a caller-supplied schedule draft without changing the project repository', async () => {
     seedProject()
     const draft = await prepareScheduleUpdate(staff, {
       projectId: 'project-1', stage: PROJECT_STAGES[0], actual: '2026-08-01', reason: 'Confirmed on site',
     })
 
-    await approveAgentDraft(staff, draft)
+    const before = localStorage.getItem('investment-dashboard.projects.v1')
 
-    const saved = JSON.parse(localStorage.getItem('investment-dashboard.projects.v1') ?? '[]') as Project[]
-    expect(saved[0].schedule[PROJECT_STAGES[0]]).toEqual({ plan: null, actual: '2026-08-01', actualReason: 'Confirmed on site' })
+    await expect(approveAgentDraft(staff, draft)).rejects.toMatchObject({ code: 'UNSUPPORTED_ACTION' })
+
+    expect(localStorage.getItem('investment-dashboard.projects.v1')).toBe(before)
+    expect(auditRows()).toEqual([])
   })
 })

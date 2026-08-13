@@ -192,6 +192,14 @@ npm run build
 - 현재 배포 경로에는 서버 소유의 pending-draft 저장소가 연결되어 있지 않다. 따라서 명시적 변경 요청은 `PENDING_DRAFT_STORAGE_UNAVAILABLE` 상태로 표시되며, `staff`와 `admin`에게도 승인·취소 버튼을 숨긴다. 이 경우 화면은 저장 성공을 표시하지 않는다.
 - 승인된 변경이 실제로 저장되는 배포 구성에서는 모든 persisted Agent action에 감사 로그를 남겨야 한다.
 
+### Agent production safety boundary (2026-08-13)
+
+- `/api/agent` authenticates its bearer token and reads projects, investment transactions, and order mappings through a bearer-scoped Supabase client. The server gateway never reads browser `localStorage` or sample rows.
+- If the authenticated source is absent, denied by RLS, or malformed, analysis returns `DATA_SOURCE_UNAVAILABLE` with no evidence.
+- The production Agent is read-only. Draft controls remain unavailable, and the dormant client draft service rejects approvals with `UNSUPPORTED_ACTION`.
+- Direct client inserts to `agent_audit_logs` are revoked. Agent writes may be enabled only after a server-owned database transaction can authorize the actor, lock and revalidate an opaque draft ID, apply one mutation, and insert an immutable audit row using server-derived identity, role, employee ID, and timestamp.
+- Deployments require `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` for the API, in addition to the client `VITE_` variables. `npm run typecheck:api` is included in `npm run build`.
+
 ## 10. 향후 개발 과제
 
 - 회사 사번 인증 또는 사내 SSO 연동

@@ -9,11 +9,25 @@ import {
   SAMPLE_INVESTMENT_TRANSACTIONS,
   SAMPLE_PROJECTS,
 } from '../../../domain/sampleData'
+import type { AgentToolContext } from '../agentToolTypes'
 
 export type AgentToolData = {
   projects: Project[]
   transactions: InvestmentTransaction[]
   orderToProject: Record<string, string>
+}
+
+export interface AgentToolDataProvider {
+  load(context: AgentToolContext): Promise<AgentToolData>
+}
+
+export class AgentToolDataUnavailableError extends Error {
+  readonly code = 'DATA_SOURCE_UNAVAILABLE'
+
+  constructor() {
+    super('DATA_SOURCE_UNAVAILABLE')
+    this.name = 'AgentToolDataUnavailableError'
+  }
 }
 
 function readJson<T>(storage: Storage, key: string, fallback: T): T {
@@ -51,4 +65,14 @@ export function getAgentToolData(storage: Storage = localStorage): AgentToolData
   }
 
   return { projects, transactions, orderToProject }
+}
+
+/** Browser-only adapter for deterministic local tests and the existing dashboard repositories. */
+export function createBrowserAgentToolDataProvider(storage: Storage = localStorage): AgentToolDataProvider {
+  return { load: async () => getAgentToolData(storage) }
+}
+
+/** Safe gateway default. A production caller must inject an authenticated server provider. */
+export const unavailableAgentToolDataProvider: AgentToolDataProvider = {
+  load: async () => { throw new AgentToolDataUnavailableError() },
 }

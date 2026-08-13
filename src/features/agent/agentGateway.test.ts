@@ -146,6 +146,14 @@ describe('agent gateway', () => {
     expect(response.toolTrace).toEqual([])
   })
 
+  it('returns a deterministic unavailable result when server tool data is not configured', async () => {
+    const response = await createAgentGateway()(request('investment analysis'), context)
+
+    expect(response.message.answer).toContain('DATA_SOURCE_UNAVAILABLE')
+    expect(response.message.hasEvidence).toBe(false)
+    expect(response.toolTrace).toEqual([{ name: 'findInvestmentAnomalies', status: 'error' }])
+  })
+
   it('keeps approved safety citations in the response', async () => {
     const gateway = createAgentGateway({
       safetySearch: async () => ({

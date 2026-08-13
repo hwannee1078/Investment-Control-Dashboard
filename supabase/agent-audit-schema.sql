@@ -16,23 +16,16 @@ create table if not exists public.agent_audit_logs (
 
 alter table public.agent_audit_logs enable row level security;
 
-create policy "users can insert their own agent audit records"
-  on public.agent_audit_logs for insert to authenticated
-  with check (
-    auth.uid() = user_id
-    and approved = true
-    and role in ('staff', 'admin')
-    and exists (
-      select 1 from public.user_roles
-      where user_id = auth.uid()
-        and role in ('staff', 'admin')
-    )
-  );
+-- Audit evidence is server-owned. No browser/client role may insert, update, or delete rows.
+drop policy if exists "users can insert their own agent audit records" on public.agent_audit_logs;
+revoke insert, update, delete on public.agent_audit_logs from anon, authenticated;
 
+drop policy if exists "users can read their own agent audit records" on public.agent_audit_logs;
 create policy "users can read their own agent audit records"
   on public.agent_audit_logs for select to authenticated
   using (auth.uid() = user_id);
 
+drop policy if exists "admins can read all agent audit records" on public.agent_audit_logs;
 create policy "admins can read all agent audit records"
   on public.agent_audit_logs for select to authenticated
   using (

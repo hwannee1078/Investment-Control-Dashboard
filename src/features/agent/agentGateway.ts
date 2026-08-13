@@ -9,6 +9,11 @@ import {
   reconcileInvestmentWorkbook,
 } from './tools/investmentTools'
 import { findMissingData } from './tools/scheduleTools'
+import {
+  AgentToolDataUnavailableError,
+  type AgentToolDataProvider,
+  unavailableAgentToolDataProvider,
+} from './tools/toolContext'
 
 export interface AgentRequest {
   conversation: Array<{ role: 'user' | 'assistant'; content: string }>
@@ -63,6 +68,7 @@ export interface AgentGatewayDependencies {
   tools?: Partial<Record<AnalysisToolName, AgentTool>>
   safetySearch?: (question: string) => Promise<AgentAnswer> | AgentAnswer
   draftActions?: AgentDraftActions
+  dataProvider?: AgentToolDataProvider
 }
 
 export class AgentGatewayError extends Error {
@@ -192,15 +198,17 @@ function toAnswer(result: AgentAnswer | AgentToolResult): { message: AgentAnswer
   return { message: result }
 }
 
-const defaultTools: Record<AnalysisToolName, AgentTool> = {
-  findInvestmentAnomalies: (context, input) => findInvestmentAnomalies(context, input as { projectId?: string; month?: string }),
-  explainVariance: (context, input) => explainVariance(context, input as { projectId: string; month?: string }),
-  getExecutiveBriefing: (context, input) => getExecutiveBriefing(context, input as { year?: number }),
-  findMissingData: (context, input) => findMissingData(context, input as { projectId?: string }),
-  reconcileInvestmentWorkbook: (context, input) => reconcileInvestmentWorkbook(
-    context,
-    input as { sourceName: string; transactions: InvestmentTransaction[] },
-  ),
+function defaultTools(dataProvider: AgentToolDataProvider): Record<AnalysisToolName, AgentTool> {
+  return {
+    findInvestmentAnomalies: (context, input) => findInvestmentAnomalies(context, input as { projectId?: string; month?: string }, dataProvider),
+    explainVariance: (context, input) => explainVariance(context, input as { projectId: string; month?: string }, dataProvider),
+    getExecutiveBriefing: (context, input) => getExecutiveBriefing(context, input as { year?: number }, dataProvider),
+    findMissingData: (context, input) => findMissingData(context, input as { projectId?: string }, dataProvider),
+    reconcileInvestmentWorkbook: (context, input) => reconcileInvestmentWorkbook(
+      context,
+      input as { sourceName: string; transactions: InvestmentTransaction[] },
+    ),
+  }
 }
 
 function defaultSafetySearch(question: string): AgentAnswer {
@@ -219,7 +227,7 @@ function defaultSafetySearch(question: string): AgentAnswer {
 export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) {
   const safetySearch = dependencies.safetySearch ?? defaultSafetySearch
   const tools: Record<AgentToolName, AgentTool> = {
-    ...defaultTools,
+    ...defaultTools(dependencies.dataProvider ?? unavailableAgentToolDataProvider),
     ...dependencies.tools,
     safetySearch: async (_context, input) => safetySearch((input as { question: string }).question),
   }
@@ -278,7 +286,13 @@ export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) 
         ...toAnswer(await tools[name](context, toolInput(name, question, selected.input))),
         toolTrace: [{ name, status: 'ok' }],
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof AgentToolDataUnavailableError) {
+        return {
+          message: noEvidenceAnswer('[DATA_SOURCE_UNAVAILABLE] 인증된 서버 데이터에 연결할 수 없습니다.'),
+          toolTrace: [{ name, status: 'error' }],
+        }
+      }
       return {
         message: noEvidenceAnswer(
           name === 'safetySearch'

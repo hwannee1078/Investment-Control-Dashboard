@@ -2,7 +2,10 @@ import type { InvestmentTransaction } from '../../../domain/investment'
 import { aggregateInvestment } from '../../../services/investmentAggregation'
 import type { AgentAnswer, AgentEvidence } from '../agentTypes'
 import type { AgentToolContext, AgentToolResult } from '../agentToolTypes'
-import { getAgentToolData } from './toolContext'
+import {
+  createBrowserAgentToolDataProvider,
+  type AgentToolDataProvider,
+} from './toolContext'
 
 const SOURCE = '대시보드 저장 데이터'
 
@@ -28,10 +31,11 @@ function noEvidence(message: string): AgentAnswer {
 }
 
 export async function findInvestmentAnomalies(
-  _context: AgentToolContext,
+  context: AgentToolContext,
   options: { projectId?: string; month?: string } = {},
+  dataProvider: AgentToolDataProvider = createBrowserAgentToolDataProvider(),
 ): Promise<AgentAnswer> {
-  const data = getAgentToolData()
+  const data = await dataProvider.load(context)
   const projects = data.projects.filter((project) =>
     (options.projectId === undefined || project.id === options.projectId),
   )
@@ -91,10 +95,11 @@ export async function findInvestmentAnomalies(
 }
 
 export async function explainVariance(
-  _context: AgentToolContext,
+  context: AgentToolContext,
   input: { projectId: string; month?: string },
+  dataProvider: AgentToolDataProvider = createBrowserAgentToolDataProvider(),
 ): Promise<AgentAnswer> {
-  const data = getAgentToolData()
+  const data = await dataProvider.load(context)
   const project = data.projects.find(({ id }) => id === input.projectId)
   if (project === undefined) return noEvidence('요청한 사업을 찾지 못했습니다.')
 
@@ -129,10 +134,11 @@ export async function explainVariance(
 }
 
 export async function getExecutiveBriefing(
-  _context: AgentToolContext,
+  context: AgentToolContext,
   input: { year?: number } = {},
+  dataProvider: AgentToolDataProvider = createBrowserAgentToolDataProvider(),
 ): Promise<AgentAnswer> {
-  const data = getAgentToolData()
+  const data = await dataProvider.load(context)
   const summaries = aggregateInvestment(data.transactions, data.orderToProject, data.projects)
   const selectedMonths = [...summaries.values()].flatMap((summary) =>
     Object.keys(summary.monthly).filter((month) =>

@@ -1,7 +1,10 @@
 import { PROJECT_STAGES } from '../../../domain/project'
 import type { AgentAnswer, AgentEvidence } from '../agentTypes'
 import type { AgentToolContext } from '../agentToolTypes'
-import { getAgentToolData } from './toolContext'
+import {
+  createBrowserAgentToolDataProvider,
+  type AgentToolDataProvider,
+} from './toolContext'
 
 function answer(text: string, evidence: AgentEvidence[]): AgentAnswer {
   return {
@@ -14,10 +17,11 @@ function answer(text: string, evidence: AgentEvidence[]): AgentAnswer {
 }
 
 export async function findMissingData(
-  _context: AgentToolContext,
+  context: AgentToolContext,
   options: { projectId?: string } = {},
+  dataProvider: AgentToolDataProvider = createBrowserAgentToolDataProvider(),
 ): Promise<AgentAnswer> {
-  const data = getAgentToolData()
+  const data = await dataProvider.load(context)
   const projects = data.projects.filter((project) =>
     options.projectId === undefined || project.id === options.projectId,
   )

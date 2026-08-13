@@ -1,11 +1,5 @@
-import { InvestmentRepository } from '../../../data/investmentRepository'
-import { ProjectRepository } from '../../../data/projectRepository'
 import type { InvestmentTransaction } from '../../../domain/investment'
-import { PROJECT_STAGES, type ProjectSchedule, type ProjectStage } from '../../../domain/project'
-import {
-  recordApprovedAgentAuditLog,
-  type AgentAuditLog,
-} from '../../../services/cloudSync'
+import { type ProjectStage } from '../../../domain/project'
 import type { AgentDraft } from '../agentTypes'
 import type { AgentToolContext } from '../agentToolTypes'
 import { reconcileInvestmentWorkbook } from '../tools/investmentTools'
@@ -14,7 +8,7 @@ import { getAgentToolData } from '../tools/toolContext'
 const cancelledDraftIds = new Set<string>()
 
 export class AgentDraftError extends Error {
-  constructor(readonly code: 'FORBIDDEN' | 'VALIDATION_FAILED' | 'DRAFT_CANCELLED' | 'INVALID_DRAFT') {
+  constructor(readonly code: 'FORBIDDEN' | 'VALIDATION_FAILED' | 'DRAFT_CANCELLED' | 'INVALID_DRAFT' | 'UNSUPPORTED_ACTION') {
     super(code)
     this.name = 'AgentDraftError'
   }
@@ -35,31 +29,6 @@ function distinctTransactions(rows: InvestmentTransaction[]): InvestmentTransact
     if (!distinct.has(key)) distinct.set(key, row)
   }
   return [...distinct.values()]
-}
-
-function isProjectStage(value: string): value is ProjectStage {
-  return (PROJECT_STAGES as readonly string[]).includes(value)
-}
-
-function isTransaction(value: unknown): value is InvestmentTransaction {
-  if (typeof value !== 'object' || value === null) return false
-  const row = value as Record<string, unknown>
-  return typeof row.sourceId === 'string'
-    && typeof row.rowId === 'string'
-    && typeof row.orderId === 'string'
-    && typeof row.month === 'string'
-    && typeof row.amount === 'number'
-}
-
-function isOrderMappings(value: unknown): value is Record<string, string> {
-  return typeof value === 'object'
-    && value !== null
-    && !Array.isArray(value)
-    && Object.values(value).every((projectId) => typeof projectId === 'string')
-}
-
-function changeAfter(draft: AgentDraft, field: string): unknown {
-  return draft.changes.find((change) => change.field === field)?.after
 }
 
 function assertPendingAndAllowed(context: AgentToolContext, draft: AgentDraft): void {
@@ -147,80 +116,12 @@ export async function prepareScheduleUpdate(
   }
 }
 
-function applyInvestmentDraft(draft: AgentDraft): void {
-  const transactions = changeAfter(draft, 'transactions')
-  const mappings = changeAfter(draft, 'orderMappings')
-  const orderIds = changeAfter(draft, 'project.orderIds')
-  const project = new ProjectRepository().get(draft.projectId)
-  if (!Array.isArray(transactions) || !transactions.every(isTransaction) || !isOrderMappings(mappings) || !Array.isArray(orderIds) || !orderIds.every((id) => typeof id === 'string') || project === undefined) {
-    throw new AgentDraftError('INVALID_DRAFT')
-  }
-
-  const investments = new InvestmentRepository()
-  investments.replaceTransactions(transactions)
-  investments.replaceOrderMappings(mappings)
-  new ProjectRepository().save({ ...project, orderIds })
-}
-
-function applyScheduleDraft(draft: AgentDraft): void {
-  const scheduleChange = draft.changes.find(({ field }) => field.startsWith('schedule.'))
-  const stage = scheduleChange?.field.slice('schedule.'.length)
-  const project = new ProjectRepository().get(draft.projectId)
-  const after = scheduleChange?.after
-  if (
-    scheduleChange === undefined
-    || stage === undefined
-    || !isProjectStage(stage)
-    || project === undefined
-    || typeof after !== 'object'
-    || after === null
-    || Array.isArray(after)
-  ) throw new AgentDraftError('INVALID_DRAFT')
-
-  const item = after as Record<string, unknown>
-  if (
-    (item.plan !== null && typeof item.plan !== 'string')
-    || typeof item.actual !== 'string'
-    || (item.actualReason !== null && typeof item.actualReason !== 'string' && item.actualReason !== undefined)
-  ) throw new AgentDraftError('INVALID_DRAFT')
-
-  const schedule: ProjectSchedule = {
-    ...project.schedule,
-    [stage]: {
-      plan: item.plan as string | null,
-      actual: item.actual,
-      actualReason: (item.actualReason ?? null) as string | null,
-    },
-  }
-  new ProjectRepository().save({ ...project, schedule })
-}
-
 export async function approveAgentDraft(
   context: AgentToolContext,
   draft: AgentDraft,
 ): Promise<{ auditId: string; saved: true }> {
   assertPendingAndAllowed(context, draft)
-  const auditId = newDraftId()
-  const audit: AgentAuditLog = {
-    id: auditId,
-    user_id: context.userId,
-    employee_id: context.employeeId,
-    role: context.role,
-    question: draft.summary,
-    tool_name: draft.kind,
-    target_project_id: draft.projectId,
-    before_data: Object.fromEntries(draft.changes.map(({ field, before }) => [field, before])),
-    after_data: Object.fromEntries(draft.changes.map(({ field, after }) => [field, after])),
-    approved: true,
-    result_code: 'APPROVED',
-    created_at: context.now,
-  }
-
-  if (draft.kind === 'investment-import') applyInvestmentDraft(draft)
-  else applyScheduleDraft(draft)
-
-  await recordApprovedAgentAuditLog(audit)
-  return { auditId, saved: true }
+  throw new AgentDraftError('UNSUPPORTED_ACTION')
 }
 
 export function cancelAgentDraft(draftId: string): void {

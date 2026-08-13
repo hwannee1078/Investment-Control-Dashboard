@@ -2,10 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 
 import {
   AgentGatewayError,
-  handleAgentRequest,
+  createAgentGateway,
   type AgentRequest,
 } from '../src/features/agent/agentGateway'
 import type { AgentRole } from '../src/features/agent/agentTypes'
+import {
+  AgentToolDataUnavailableError,
+  type AgentToolDataProvider,
+} from '../src/features/agent/tools/toolContext'
+import { createSupabaseAgentToolDataProvider } from '../src/features/agent/tools/supabaseToolDataProvider'
 
 type ServerEnvironment = typeof globalThis & {
   process?: { env?: Record<string, string | undefined> }
@@ -19,6 +24,7 @@ type AuthenticatedAgent = {
 
 export interface AgentApiDependencies {
   authenticate?: (token: string) => Promise<AuthenticatedAgent>
+  dataProvider?: AgentToolDataProvider
 }
 
 function json(body: unknown, status = 200): Response {
@@ -74,6 +80,39 @@ async function authenticateWithSupabase(token: string): Promise<AuthenticatedAge
   }
 }
 
+function serverDataProvider(token: string): AgentToolDataProvider {
+  const environment = (globalThis as ServerEnvironment).process?.env ?? {}
+  const url = environment.SUPABASE_URL
+  const key = environment.SUPABASE_PUBLISHABLE_KEY
+  if (!url || !key) {
+    return { load: async () => { throw new AgentToolDataUnavailableError() } }
+  }
+  const supabase = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  })
+  return createSupabaseAgentToolDataProvider(supabase)
+}
+
+function parseAgentRequest(value: Record<string, unknown>): AgentRequest | undefined {
+  if (!Array.isArray(value.conversation) || value.conversation.length === 0 || value.conversation.length > 50) return undefined
+  const conversation: AgentRequest['conversation'] = []
+  for (const message of value.conversation) {
+    if (!isObject(message)) return undefined
+    if ((message.role !== 'user' && message.role !== 'assistant') || typeof message.content !== 'string') return undefined
+    if (!message.content.trim() || message.content.length > 4_000) return undefined
+    conversation.push({ role: message.role, content: message.content })
+  }
+  if (value.action === undefined) return { conversation }
+  if (!isObject(value.action)) return undefined
+  if (
+    (value.action.type !== 'approve-draft' && value.action.type !== 'cancel-draft')
+    || typeof value.action.draftId !== 'string'
+    || !value.action.draftId.trim()
+  ) return undefined
+  return { conversation, action: { type: value.action.type, draftId: value.action.draftId } }
+}
+
 /** Vercel serverless entry point. Client payload never determines user identity or role. */
 export function createAgentHandler(dependencies: AgentApiDependencies = {}) {
   const authenticate = dependencies.authenticate ?? authenticateWithSupabase
@@ -91,10 +130,15 @@ export function createAgentHandler(dependencies: AgentApiDependencies = {}) {
       return json({ error: { code: 'MALFORMED_REQUEST' } }, 400)
     }
     if (!isObject(body)) return json({ error: { code: 'MALFORMED_REQUEST' } }, 400)
+    const agentRequest = parseAgentRequest(body)
+    if (agentRequest === undefined) return json({ error: { code: 'MALFORMED_REQUEST' } }, 400)
 
     try {
       const identity = await authenticate(token)
-      const response = await handleAgentRequest(body as AgentRequest, {
+      const handleAgentRequest = createAgentGateway({
+        dataProvider: dependencies.dataProvider ?? serverDataProvider(token),
+      })
+      const response = await handleAgentRequest(agentRequest, {
         ...identity,
         now: new Date().toISOString(),
       })
