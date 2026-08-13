@@ -21,18 +21,21 @@ export interface AgentResponse {
   toolTrace: Array<{ name: string; status: 'ok' | 'error' }>
 }
 
-export type AgentToolName =
+type AnalysisToolName =
   | 'findInvestmentAnomalies'
   | 'explainVariance'
   | 'getExecutiveBriefing'
   | 'findMissingData'
   | 'reconcileInvestmentWorkbook'
 
+export type AgentToolName = AnalysisToolName | 'safetySearch'
+
 type ToolInput =
   | { projectId?: string; month?: string }
   | { projectId: string; month?: string }
   | { year?: number }
   | { sourceName: string; transactions: InvestmentTransaction[] }
+  | { question: string }
 
 type AgentTool = (
   context: AgentToolContext,
@@ -53,13 +56,13 @@ export interface AgentDraftActions {
 
 export interface AgentGatewayDependencies {
   provider?: AgentModelAdapter
-  tools?: Partial<Record<AgentToolName, AgentTool>>
+  tools?: Partial<Record<AnalysisToolName, AgentTool>>
   safetySearch?: (question: string) => Promise<AgentAnswer> | AgentAnswer
   draftActions?: AgentDraftActions
 }
 
 export class AgentGatewayError extends Error {
-  constructor(readonly code: 'MALFORMED_REQUEST' | 'UNAUTHENTICATED') {
+  constructor(readonly code: 'MALFORMED_REQUEST' | 'UNAUTHENTICATED' | 'FORBIDDEN' | 'UNSUPPORTED_ACTION') {
     super(code)
     this.name = 'AgentGatewayError'
   }
@@ -71,6 +74,7 @@ const registeredTools: readonly AgentToolName[] = [
   'getExecutiveBriefing',
   'findMissingData',
   'reconcileInvestmentWorkbook',
+  'safetySearch',
 ]
 
 function noEvidenceAnswer(answer: string, intent: AgentIntent = 'unknown'): AgentAnswer {
@@ -81,6 +85,14 @@ function validateContext(context: AgentToolContext): void {
   if (!context.userId.trim() || !context.employeeId.trim() || !context.now.trim()) {
     throw new AgentGatewayError('UNAUTHENTICATED')
   }
+}
+
+function isDraftAction(value: unknown): value is NonNullable<AgentRequest['action']> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const action = value as Record<string, unknown>
+  return (action.type === 'approve-draft' || action.type === 'cancel-draft')
+    && typeof action.draftId === 'string'
+    && action.draftId.trim().length > 0
 }
 
 function validateRequest(request: AgentRequest): void {
@@ -94,20 +106,20 @@ function validateRequest(request: AgentRequest): void {
       || !message.content.trim()
     ) throw new AgentGatewayError('MALFORMED_REQUEST')
   }
-  if (
-    request.action !== undefined
-    && (request.action.type !== 'approve-draft' && request.action.type !== 'cancel-draft'
-      || !request.action.draftId.trim())
-  ) throw new AgentGatewayError('MALFORMED_REQUEST')
+  if (!request.conversation.some((message) => message.role === 'user')) {
+    throw new AgentGatewayError('MALFORMED_REQUEST')
+  }
+  if (request.action !== undefined && !isDraftAction(request.action)) {
+    throw new AgentGatewayError('MALFORMED_REQUEST')
+  }
 }
 
 function latestQuestion(request: AgentRequest): string {
-  return [...request.conversation]
-    .reverse()
+  return [...request.conversation].reverse()
     .find((message) => message.role === 'user')?.content.trim() ?? ''
 }
 
-function routeQuestion(question: string): AgentToolName | 'safetySearch' {
+function routeQuestion(question: string): AgentToolName {
   if (/(안전|위험|보호구|재해|산업안전|작업허가)/.test(question)) return 'safetySearch'
   if (/(엑셀|워크북|업로드|C14|C15)/i.test(question)) return 'reconcileInvestmentWorkbook'
   if (/(일정|공정|누락|매핑)/.test(question)) return 'findMissingData'
@@ -124,12 +136,23 @@ function monthFrom(question: string): string | undefined {
   return /\b(20\d{2}-\d{2})\b/.exec(question)?.[1]
 }
 
+function isInvestmentTransaction(value: unknown): value is InvestmentTransaction {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const row = value as Record<string, unknown>
+  return typeof row.sourceId === 'string'
+    && typeof row.rowId === 'string'
+    && typeof row.orderId === 'string'
+    && typeof row.month === 'string'
+    && typeof row.amount === 'number'
+}
+
 function toolInput(name: AgentToolName, question: string, candidate?: unknown): ToolInput {
   const requested = typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
     ? candidate as Record<string, unknown>
     : {}
   const projectId = typeof requested.projectId === 'string' ? requested.projectId : projectIdFrom(question)
   const month = typeof requested.month === 'string' ? requested.month : monthFrom(question)
+  if (name === 'safetySearch') return { question }
   if (name === 'explainVariance') return { projectId, month }
   if (name === 'getExecutiveBriefing') {
     const year = typeof requested.year === 'number' && Number.isInteger(requested.year)
@@ -149,16 +172,6 @@ function toolInput(name: AgentToolName, question: string, candidate?: unknown): 
   return { projectId: projectId || undefined, month }
 }
 
-function isInvestmentTransaction(value: unknown): value is InvestmentTransaction {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
-  const row = value as Record<string, unknown>
-  return typeof row.sourceId === 'string'
-    && typeof row.rowId === 'string'
-    && typeof row.orderId === 'string'
-    && typeof row.month === 'string'
-    && typeof row.amount === 'number'
-}
-
 function toAnswer(result: AgentAnswer | AgentToolResult): { message: AgentAnswer; draft?: AgentDraft } {
   if ('errors' in result) {
     return {
@@ -171,23 +184,11 @@ function toAnswer(result: AgentAnswer | AgentToolResult): { message: AgentAnswer
   return { message: result }
 }
 
-const defaultTools: Record<AgentToolName, AgentTool> = {
-  findInvestmentAnomalies: (context, input) => findInvestmentAnomalies(
-    context,
-    input as { projectId?: string; month?: string },
-  ),
-  explainVariance: (context, input) => explainVariance(
-    context,
-    input as { projectId: string; month?: string },
-  ),
-  getExecutiveBriefing: (context, input) => getExecutiveBriefing(
-    context,
-    input as { year?: number },
-  ),
-  findMissingData: (context, input) => findMissingData(
-    context,
-    input as { projectId?: string },
-  ),
+const defaultTools: Record<AnalysisToolName, AgentTool> = {
+  findInvestmentAnomalies: (context, input) => findInvestmentAnomalies(context, input as { projectId?: string; month?: string }),
+  explainVariance: (context, input) => explainVariance(context, input as { projectId: string; month?: string }),
+  getExecutiveBriefing: (context, input) => getExecutiveBriefing(context, input as { year?: number }),
+  findMissingData: (context, input) => findMissingData(context, input as { projectId?: string }),
   reconcileInvestmentWorkbook: (context, input) => reconcileInvestmentWorkbook(
     context,
     input as { sourceName: string; transactions: InvestmentTransaction[] },
@@ -200,11 +201,7 @@ function defaultSafetySearch(question: string): AgentAnswer {
     answer: safety.answer,
     intent: 'safety-search',
     citations: safety.citations.map(({ title, section, page, sourceDate, url }) => ({
-      title,
-      section,
-      page,
-      sourceDate,
-      url,
+      title, section, page, sourceDate, url,
     })),
     evidence: [],
     hasEvidence: safety.hasEvidence,
@@ -212,8 +209,12 @@ function defaultSafetySearch(question: string): AgentAnswer {
 }
 
 export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) {
-  const tools = { ...defaultTools, ...dependencies.tools }
   const safetySearch = dependencies.safetySearch ?? defaultSafetySearch
+  const tools: Record<AgentToolName, AgentTool> = {
+    ...defaultTools,
+    ...dependencies.tools,
+    safetySearch: async (_context, input) => safetySearch((input as { question: string }).question),
+  }
 
   return async function handleAgentRequest(
     request: AgentRequest,
@@ -223,14 +224,15 @@ export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) 
     validateRequest(request)
 
     if (request.action !== undefined) {
-      const action = request.action.type === 'approve-draft'
-        ? dependencies.draftActions?.approve(context, request.action.draftId)
-        : dependencies.draftActions?.cancel(request.action.draftId)
-      const draft = action === undefined ? undefined : await action
+      if (context.role === 'viewer') throw new AgentGatewayError('FORBIDDEN')
+      if (dependencies.draftActions === undefined) throw new AgentGatewayError('UNSUPPORTED_ACTION')
+      const draft = request.action.type === 'approve-draft'
+        ? await dependencies.draftActions.approve(context, request.action.draftId)
+        : await dependencies.draftActions.cancel(request.action.draftId)
       return {
         message: draft === undefined
           ? noEvidenceAnswer('요청한 초안을 찾을 수 없습니다. 새로 분석을 요청해 주세요.')
-          : noEvidenceAnswer(request.action.type === 'approve-draft' ? '초안 승인 요청을 처리했습니다.' : '초안을 취소했습니다.'),
+          : noEvidenceAnswer(request.action.type === 'approve-draft' ? '초안 승인을 처리했습니다.' : '초안을 취소했습니다.'),
         draft,
         toolTrace: [{ name: request.action.type === 'approve-draft' ? 'approveDraft' : 'cancelDraft', status: draft === undefined ? 'error' : 'ok' }],
       }
@@ -243,24 +245,10 @@ export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) 
         ? { name: routeQuestion(question) }
         : await dependencies.provider.chooseTool({ question, registeredTools })
     } catch {
-      return {
-        message: noEvidenceAnswer('AI 분석 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'),
-        toolTrace: [],
-      }
+      return { message: noEvidenceAnswer('AI 분석 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'), toolTrace: [] }
     }
-
     if (typeof selected !== 'object' || selected === null || typeof selected.name !== 'string') {
-      return {
-        message: noEvidenceAnswer('AI 분석 요청 형식을 확인할 수 없습니다.'),
-        toolTrace: [],
-      }
-    }
-    if (selected.name === 'safetySearch') {
-      try {
-        return { message: await safetySearch(question), toolTrace: [{ name: 'safetySearch', status: 'ok' }] }
-      } catch {
-        return { message: noEvidenceAnswer('안전 문서 분석 서비스를 일시적으로 사용할 수 없습니다.', 'safety-search'), toolTrace: [{ name: 'safetySearch', status: 'error' }] }
-      }
+      return { message: noEvidenceAnswer('AI 분석 요청 형식을 확인할 수 없습니다.'), toolTrace: [] }
     }
     if (!registeredTools.includes(selected.name as AgentToolName)) {
       return {
@@ -277,7 +265,12 @@ export function createAgentGateway(dependencies: AgentGatewayDependencies = {}) 
       }
     } catch {
       return {
-        message: noEvidenceAnswer('분석 중 오류가 발생했습니다. 요청 조건을 확인한 뒤 다시 시도해 주세요.'),
+        message: noEvidenceAnswer(
+          name === 'safetySearch'
+            ? '안전 문서 분석 서비스를 일시적으로 사용할 수 없습니다.'
+            : '분석 중 오류가 발생했습니다. 요청 조건을 확인한 뒤 다시 시도해 주세요.',
+          name === 'safetySearch' ? 'safety-search' : 'unknown',
+        ),
         toolTrace: [{ name, status: 'error' }],
       }
     }

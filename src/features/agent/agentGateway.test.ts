@@ -111,4 +111,58 @@ describe('agent gateway', () => {
     ])
     expect(response.toolTrace).toEqual([{ name: 'safetySearch', status: 'ok' }])
   })
+
+  it('routes a provider-selected safety search through the registered tool list', async () => {
+    const safetySearch = vi.fn(async () => answer('safety-search'))
+    const gateway = createAgentGateway({
+      provider: { chooseTool: async ({ registeredTools }) => {
+        expect(registeredTools).toContain('safetySearch')
+        return { name: 'safetySearch' }
+      } },
+      safetySearch,
+    })
+
+    const response = await gateway(request('투자비 분석'), context)
+
+    expect(safetySearch).toHaveBeenCalledOnce()
+    expect(response.toolTrace).toEqual([{ name: 'safetySearch', status: 'ok' }])
+  })
+
+  it('rejects a viewer draft approval before an adapter can run', async () => {
+    const approve = vi.fn()
+    const gateway = createAgentGateway({ draftActions: { approve, cancel: vi.fn() } })
+
+    await expect(gateway({
+      ...request('초안 승인'),
+      action: { type: 'approve-draft', draftId: 'draft-1' },
+    }, context)).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+    expect(approve).not.toHaveBeenCalled()
+  })
+
+  it('rejects unsupported draft actions instead of reporting success', async () => {
+    const gateway = createAgentGateway()
+
+    await expect(gateway({
+      ...request('초안 승인'),
+      action: { type: 'approve-draft', draftId: 'draft-1' },
+    }, { ...context, role: 'staff' })).rejects.toMatchObject({ code: 'UNSUPPORTED_ACTION' })
+  })
+
+  it.each([null, {}, { type: 'approve-draft' }, { type: 'unexpected', draftId: 'draft-1' }])(
+    'rejects malformed action payload %j',
+    async (action) => {
+      const { gateway } = gatewayWithTools()
+
+      await expect(gateway({ ...request('투자비 분석'), action } as never, context))
+        .rejects.toMatchObject({ code: 'MALFORMED_REQUEST' })
+    },
+  )
+
+  it('rejects a conversation without a user request', async () => {
+    const { gateway } = gatewayWithTools()
+
+    await expect(gateway({ conversation: [{ role: 'assistant', content: '안내' }] }, context))
+      .rejects.toMatchObject({ code: 'MALFORMED_REQUEST' })
+  })
 })
