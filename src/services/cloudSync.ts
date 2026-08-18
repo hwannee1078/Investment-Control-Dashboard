@@ -1,6 +1,7 @@
 import type { UserRole } from '../features/auth/authStore'
 import { ORDER_MAPPINGS_STORAGE_KEY, TRANSACTIONS_STORAGE_KEY } from '../data/investmentRepository'
 import { PROJECTS_STORAGE_KEY } from '../data/projectRepository'
+import { IMPORT_BATCHES_STORAGE_KEY } from '../data/importBatchRepository'
 import { PROJECT_FINALIZED_KEY } from '../features/auth/workflowStore'
 import { supabase } from './supabaseClient'
 import { isOfflineMode, offlineApiBaseUrl, offlineAuthHeaders } from './runtimeConfig'
@@ -62,10 +63,11 @@ export async function syncLocalDataToCloud(storage: Storage = localStorage): Pro
     const transactions = parseJson<unknown[]>(storage.getItem(TRANSACTIONS_STORAGE_KEY), [])
     const mappings = parseJson<Record<string, string>>(storage.getItem(ORDER_MAPPINGS_STORAGE_KEY), {})
     const finalizations = parseJson<Record<string, boolean>>(storage.getItem(PROJECT_FINALIZED_KEY), {})
+    const importBatches = parseJson<unknown[]>(storage.getItem(IMPORT_BATCHES_STORAGE_KEY), [])
     const response = await fetch(`${offlineApiBaseUrl}/sync`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...offlineAuthHeaders() },
-      body: JSON.stringify({ projects, transactions, mappings, finalizations }),
+      body: JSON.stringify({ projects, transactions, mappings, finalizations, importBatches }),
     })
     if (!response.ok) throw new Error('오프라인 데이터 저장에 실패했습니다.')
     return
@@ -115,11 +117,13 @@ export async function hydrateLocalDataFromCloud(storage: Storage = localStorage)
       transactions: unknown[]
       mappings: Record<string, string>
       finalizations: Record<string, boolean>
+      importBatches: unknown[]
     }
     storage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(payload.projects))
     storage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(payload.transactions))
     storage.setItem(ORDER_MAPPINGS_STORAGE_KEY, JSON.stringify(payload.mappings))
     storage.setItem(PROJECT_FINALIZED_KEY, JSON.stringify(payload.finalizations))
+    storage.setItem(IMPORT_BATCHES_STORAGE_KEY, JSON.stringify(payload.importBatches ?? []))
     return 'hydrated'
   }
   if (!supabase) return 'disabled'

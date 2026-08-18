@@ -80,17 +80,19 @@ async function seed() {
 }
 
 async function listData() {
-  const [projects, transactions, mappings, finalizations] = await Promise.all([
+  const [projects, transactions, mappings, finalizations, importBatches] = await Promise.all([
     pool.query('select id, data from projects order by id'),
     pool.query('select source_id, row_id, data from investment_transactions order by source_id, row_id'),
     pool.query('select order_id, project_id from order_mappings order by order_id'),
     pool.query('select project_id, finalized from project_finalizations where finalized = true'),
+    pool.query('select data from import_batches order by uploaded_at desc'),
   ])
   return {
     projects: projects.rows.map((row) => row.data),
     transactions: transactions.rows.map((row) => row.data),
     mappings: Object.fromEntries(mappings.rows.map((row) => [row.order_id, row.project_id])),
     finalizations: Object.fromEntries(finalizations.rows.map((row) => [row.project_id, row.finalized])),
+    importBatches: importBatches.rows.map((row) => row.data),
   }
 }
 
@@ -102,6 +104,7 @@ async function syncData(body) {
     for (const data of body.transactions ?? []) await client.query('insert into investment_transactions (source_id, row_id, data) values ($1, $2, $3) on conflict (source_id, row_id) do update set data = excluded.data, updated_at = now()', [data.sourceId, data.rowId, data])
     for (const [orderId, projectId] of Object.entries(body.mappings ?? {})) await client.query('insert into order_mappings (order_id, project_id) values ($1, $2) on conflict (order_id) do update set project_id = excluded.project_id, updated_at = now()', [orderId, projectId])
     for (const [projectId, finalized] of Object.entries(body.finalizations ?? {})) await client.query('insert into project_finalizations (project_id, finalized) values ($1, $2) on conflict (project_id) do update set finalized = excluded.finalized, updated_at = now()', [projectId, finalized])
+    for (const batch of body.importBatches ?? []) await client.query('insert into import_batches (id, uploaded_at, data) values ($1, $2, $3) on conflict (id) do update set data = excluded.data, uploaded_at = excluded.uploaded_at', [batch.id, batch.uploadedAt, batch])
     await client.query('commit')
   } catch (error) {
     await client.query('rollback')

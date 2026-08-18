@@ -8,6 +8,7 @@ import { finalizeProject } from '../auth/workflowStore'
 import ImportPreview from './ImportPreview'
 import OrderMappingTable from './OrderMappingTable'
 import { syncLocalDataToCloud } from '../../services/cloudSync'
+import { saveImportBatch } from '../../data/importBatchRepository'
 
 function mappingsFromProjects(projects: Project[]): Record<string, string> { return Object.fromEntries(projects.flatMap((project) => project.orderIds.map((orderId) => [orderId, project.id]))) }
 function mappingsFromStorage(storage: Storage = localStorage): Record<string, string> { try { return JSON.parse(storage.getItem(ORDER_MAPPINGS_STORAGE_KEY) ?? '{}') as Record<string, string> } catch { return {} } }
@@ -22,6 +23,7 @@ export default function InvestmentImportPage() {
   const [readError, setReadError] = useState('')
   const [confirmError, setConfirmError] = useState('')
   const [completed, setCompleted] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const role = getSessionRole()
   // 실무담당자는 확정 이후에도 다음 달 실적 파일을 계속 업로드할 수 있다.
   // 관리자만 활성화/비활성화 및 강제 수정 권한을 별도로 가진다.
@@ -32,6 +34,7 @@ export default function InvestmentImportPage() {
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? [])
     if (!files.length) return
+    setSelectedFiles(files)
     setCompleted(false); setReadError(''); setConfirmError(''); setIsReading(true)
     try { setResult(await parseWorkbookFiles(files)) } catch { setResult(null); setReadError('파일을 읽을 수 없습니다. 원본 파일 형식을 확인해 주세요.') } finally { setIsReading(false) }
   }
@@ -46,6 +49,18 @@ export default function InvestmentImportPage() {
     investmentRepository.replaceTransactions([...mergedTransactions.values()]); investmentRepository.replaceOrderMappings(combinedMappings)
     for (const project of projects) { const ids = Object.entries(combinedMappings).filter(([, id]) => id === project.id).map(([id]) => id); const next = [...new Set([...project.orderIds, ...ids])]; if (next.length !== project.orderIds.length) projectRepository.save({ ...project, orderIds: next }) }
     for (const projectId of new Set(mappedRows.map(({ orderId }) => validMappings[orderId]))) finalizeProject(projectId)
+    saveImportBatch({
+      id: globalThis.crypto?.randomUUID?.() ?? `import-${Date.now()}`,
+      uploadedAt: new Date().toISOString(),
+      fileNames: selectedFiles.map((file) => file.name),
+      fileSizes: selectedFiles.map((file) => file.size),
+      projectIds: [...new Set(mappedRows.map(({ orderId }) => validMappings[orderId]))],
+      orderIds: [...new Set(mappedRows.map(({ orderId }) => orderId))],
+      acceptedRows: mappedRows.length,
+      warningCount: result.warnings.length,
+      errorCount: result.errors.length,
+      status: 'confirmed',
+    })
     void syncLocalDataToCloud()
     setResult(null); setConfirmError(''); setCompleted(true)
   }

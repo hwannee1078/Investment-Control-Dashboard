@@ -37,6 +37,13 @@ create table if not exists project_finalizations (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists import_batches (
+  id text primary key,
+  uploaded_at timestamptz not null,
+  data jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists safety_documents (
   id text primary key,
   title text not null,
@@ -62,6 +69,8 @@ create index if not exists investment_transactions_source_idx
   on investment_transactions (source_id);
 create index if not exists order_mappings_project_idx
   on order_mappings (project_id);
+create index if not exists import_batches_uploaded_idx
+  on import_batches (uploaded_at desc);
 create index if not exists safety_chunks_document_idx
   on safety_document_chunks (document_id);
 
