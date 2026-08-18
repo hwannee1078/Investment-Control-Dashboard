@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 import pg from 'pg'
 
@@ -72,6 +72,12 @@ function safeBatchId(value) {
   const id = String(value ?? '')
   if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) throw new Error('배치 ID가 올바르지 않습니다.')
   return id
+}
+
+function safeStoredFileName(value) {
+  const name = basename(String(value ?? ''))
+  if (!name || name !== String(value) || name === '.' || name === '..') throw new Error('파일명이 올바르지 않습니다.')
+  return name
 }
 
 async function archiveImportFiles(body) {
@@ -210,6 +216,27 @@ const server = createServer(async (request, response) => {
       if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '원본 파일 보관 권한이 없습니다.' })
       await archiveImportFiles(await readJson(request))
       return send(response, 201, { archived: true })
+    }
+    if (request.method === 'GET' && url.pathname.startsWith('/api/offline/import-files/')) {
+      if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '원본 파일 조회 권한이 없습니다.' })
+      const parts = url.pathname.split('/').filter(Boolean)
+      if (parts.length !== 5) return send(response, 400, { message: '다운로드 경로가 올바르지 않습니다.' })
+      const batchId = safeBatchId(decodeURIComponent(parts[3]))
+      const fileName = safeStoredFileName(decodeURIComponent(parts[4]))
+      let buffer
+      try {
+        buffer = await readFile(join(importArchiveDir, batchId, fileName))
+      } catch (error) {
+        if (error?.code === 'ENOENT') return send(response, 404, { message: '원본 파일을 찾을 수 없습니다.' })
+        throw error
+      }
+      response.writeHead(200, {
+        'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+        'content-length': buffer.length,
+      })
+      response.end(buffer)
+      return
     }
     if (request.method === 'POST' && url.pathname === '/api/offline/sync') {
       if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '자료 수정 권한이 없습니다.' })

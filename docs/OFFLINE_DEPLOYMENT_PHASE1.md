@@ -83,6 +83,7 @@ Get-Content .\investment.dump -Raw -Encoding Byte | `
 - `GET /api/offline/bootstrap`: 사업·투자비·오더 매핑·확정 상태 조회
 - `POST /api/offline/sync`: 실무담당자·관리자의 변경사항 저장
 - `POST /api/offline/import-files`: 실무담당자·관리자의 원본 Excel 보관
+- `GET /api/offline/import-files/{batchId}/{fileName}`: 실무담당자·관리자의 원본 Excel 다운로드
 - `GET /api/offline/healthz`: 내부 API 상태 확인
 
 ## 오프라인 투자비 업로드 현재 동작
@@ -90,6 +91,8 @@ Get-Content .\investment.dump -Raw -Encoding Byte | `
 `투자비 가져오기` 화면에서 사업을 선택하고 여러 Excel 파일을 업로드하면 기존 검증 로직이 파일별 오더번호와 `C14`/`C15:C108` 정합성을 확인합니다. 확정 시 사업별 매핑과 거래 행을 브라우저 저장소에 먼저 반영한 뒤 `POST /api/offline/sync`로 PostgreSQL에 저장하므로, 폐쇄망에서도 다음 달 파일을 계속 추가할 수 있습니다. 동일한 `sourceId`·`rowId`는 중복 저장되지 않습니다.
 
 원본 Excel은 PostgreSQL에 넣지 않고 API 컨테이너의 전용 볼륨(`investment_import_files`)에 배치별 디렉터리로 보관합니다. 파일당 기본 20MB 제한, 경로 문자 정규화, 중복 파일명 차단, staff/admin 권한 검사를 적용합니다. 메타데이터에는 파일명·크기·사업·오더·행 수·검증 건수가 포함됩니다.
+
+저장된 원본은 인증된 staff/admin 세션에서 `/api/offline/import-files/{batchId}/{fileName}` 경로로 내려받을 수 있습니다. 존재하지 않는 배치나 파일은 서버가 오류로 처리하며 경로 상위 이동(`..`)은 허용하지 않습니다.
 
 ## 다음 단계
 
