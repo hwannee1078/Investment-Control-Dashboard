@@ -9,6 +9,7 @@ import ImportPreview from './ImportPreview'
 import OrderMappingTable from './OrderMappingTable'
 import { syncLocalDataToCloud } from '../../services/cloudSync'
 import { saveImportBatch } from '../../data/importBatchRepository'
+import { archiveOfflineImportFiles } from '../../services/offlineImportArchive'
 
 function mappingsFromProjects(projects: Project[]): Record<string, string> { return Object.fromEntries(projects.flatMap((project) => project.orderIds.map((orderId) => [orderId, project.id]))) }
 function mappingsFromStorage(storage: Storage = localStorage): Record<string, string> { try { return JSON.parse(storage.getItem(ORDER_MAPPINGS_STORAGE_KEY) ?? '{}') as Record<string, string> } catch { return {} } }
@@ -38,19 +39,26 @@ export default function InvestmentImportPage() {
     setCompleted(false); setReadError(''); setConfirmError(''); setIsReading(true)
     try { setResult(await parseWorkbookFiles(files)) } catch { setResult(null); setReadError('파일을 읽을 수 없습니다. 원본 파일 형식을 확인해 주세요.') } finally { setIsReading(false) }
   }
-  function confirmImport() {
+  async function confirmImport() {
     if (!result) return
     const combinedMappings = { ...mappingsFromStorage(), ...orderMappings }
     const validMappings = Object.fromEntries(Object.entries(combinedMappings).filter(([, projectId]) => projectIds.has(projectId)))
     const mappedRows = result.rows.filter(({ orderId }) => validMappings[orderId] !== undefined && !lockedProjectIds.has(validMappings[orderId]))
     if (!mappedRows.length) { setConfirmError('유효하게 연결된 행이 하나 이상 필요합니다. 이미 확정된 사업은 관리자만 수정할 수 있습니다.'); return }
+    const batchId = globalThis.crypto?.randomUUID?.() ?? `import-${Date.now()}`
+    try {
+      await archiveOfflineImportFiles(batchId, selectedFiles)
+    } catch (error) {
+      setConfirmError(error instanceof Error ? error.message : '원본 Excel 보관에 실패했습니다.')
+      return
+    }
     const mergedTransactions = new Map<string, (typeof mappedRows)[number]>()
     for (const row of [...investmentRepository.listTransactions(), ...mappedRows]) { const identity = `${row.sourceId}\u0000${row.rowId}`; if (!mergedTransactions.has(identity)) mergedTransactions.set(identity, row) }
     investmentRepository.replaceTransactions([...mergedTransactions.values()]); investmentRepository.replaceOrderMappings(combinedMappings)
     for (const project of projects) { const ids = Object.entries(combinedMappings).filter(([, id]) => id === project.id).map(([id]) => id); const next = [...new Set([...project.orderIds, ...ids])]; if (next.length !== project.orderIds.length) projectRepository.save({ ...project, orderIds: next }) }
     for (const projectId of new Set(mappedRows.map(({ orderId }) => validMappings[orderId]))) finalizeProject(projectId)
     saveImportBatch({
-      id: globalThis.crypto?.randomUUID?.() ?? `import-${Date.now()}`,
+      id: batchId,
       uploadedAt: new Date().toISOString(),
       fileNames: selectedFiles.map((file) => file.name),
       fileSizes: selectedFiles.map((file) => file.size),

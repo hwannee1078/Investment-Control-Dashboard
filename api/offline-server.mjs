@@ -1,6 +1,8 @@
 import { createServer } from 'node:http'
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { basename, join, resolve } from 'node:path'
 import pg from 'pg'
 
 const { Pool } = pg
@@ -8,6 +10,8 @@ const scrypt = promisify(scryptCallback)
 const port = Number(process.env.PORT ?? 3000)
 const jwtSecret = process.env.JWT_SECRET
 if (!jwtSecret) throw new Error('JWT_SECRET is required')
+const importArchiveDir = resolve(process.env.IMPORT_ARCHIVE_DIR ?? './offline-imports')
+const maxImportFileBytes = Number(process.env.IMPORT_MAX_FILE_BYTES ?? 20 * 1024 * 1024)
 
 const pool = new Pool({
   host: process.env.PGHOST ?? 'db',
@@ -57,9 +61,33 @@ function decodeToken(request) {
 }
 
 async function readJson(request) {
+  const declaredLength = Number(request.headers['content-length'] ?? 0)
+  if (declaredLength > maxImportFileBytes * 4 + 1024 * 1024) throw new Error('요청 크기가 너무 큽니다.')
   const chunks = []
   for await (const chunk of request) chunks.push(chunk)
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')
+}
+
+function safeBatchId(value) {
+  const id = String(value ?? '')
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) throw new Error('배치 ID가 올바르지 않습니다.')
+  return id
+}
+
+async function archiveImportFiles(body) {
+  const batchId = safeBatchId(body.batchId)
+  if (!Array.isArray(body.files) || body.files.length === 0 || body.files.length > 30) throw new Error('보관할 파일이 올바르지 않습니다.')
+  const batchDir = join(importArchiveDir, batchId)
+  await mkdir(batchDir, { recursive: true })
+  for (const file of body.files) {
+    const name = basename(String(file?.name ?? '')).replace(/[^\p{L}\p{N}._-]/gu, '_')
+    const content = String(file?.contentBase64 ?? '')
+    const size = Number(file?.size ?? 0)
+    if (!name || name === '.' || name === '..' || !Number.isSafeInteger(size) || size < 1 || size > maxImportFileBytes || !content) throw new Error('파일 크기 또는 이름이 올바르지 않습니다.')
+    const buffer = Buffer.from(content, 'base64')
+    if (buffer.length !== size) throw new Error('파일 내용 검증에 실패했습니다.')
+    await writeFile(join(batchDir, name), buffer, { flag: 'wx', mode: 0o600 })
+  }
 }
 
 function send(response, status, body) {
@@ -177,6 +205,11 @@ const server = createServer(async (request, response) => {
       const question = [...(body.conversation ?? [])].reverse().find((message) => message?.role === 'user')?.content
       if (typeof question !== 'string' || !question.trim()) return send(response, 400, { message: '질문이 필요합니다.' })
       return send(response, 200, { message: await safetyAnswer(question), toolTrace: [{ name: 'safetySearch', status: 'ok' }] })
+    }
+    if (request.method === 'POST' && url.pathname === '/api/offline/import-files') {
+      if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '원본 파일 보관 권한이 없습니다.' })
+      await archiveImportFiles(await readJson(request))
+      return send(response, 201, { archived: true })
     }
     if (request.method === 'POST' && url.pathname === '/api/offline/sync') {
       if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '자료 수정 권한이 없습니다.' })

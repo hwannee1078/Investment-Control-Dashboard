@@ -82,17 +82,18 @@ Get-Content .\investment.dump -Raw -Encoding Byte | `
 - `POST /api/offline/login`: 사번·비밀번호 로그인 및 역할 토큰 발급
 - `GET /api/offline/bootstrap`: 사업·투자비·오더 매핑·확정 상태 조회
 - `POST /api/offline/sync`: 실무담당자·관리자의 변경사항 저장
+- `POST /api/offline/import-files`: 실무담당자·관리자의 원본 Excel 보관
 - `GET /api/offline/healthz`: 내부 API 상태 확인
 
 ## 오프라인 투자비 업로드 현재 동작
 
 `투자비 가져오기` 화면에서 사업을 선택하고 여러 Excel 파일을 업로드하면 기존 검증 로직이 파일별 오더번호와 `C14`/`C15:C108` 정합성을 확인합니다. 확정 시 사업별 매핑과 거래 행을 브라우저 저장소에 먼저 반영한 뒤 `POST /api/offline/sync`로 PostgreSQL에 저장하므로, 폐쇄망에서도 다음 달 파일을 계속 추가할 수 있습니다. 동일한 `sourceId`·`rowId`는 중복 저장되지 않습니다.
 
-현재 단계의 안전한 경계는 원본 Excel 바이너리를 별도 파일 저장소에 보관하지 않고, 검증된 거래 데이터와 업로드 메타데이터(import batch)를 저장하는 것입니다. 메타데이터에는 파일명·크기·사업·오더·행 수·검증 건수가 포함됩니다. 원본 보관이 필요한 운영 단계에서는 별도 파일 저장소를 추가해야 합니다.
+원본 Excel은 PostgreSQL에 넣지 않고 API 컨테이너의 전용 볼륨(`investment_import_files`)에 배치별 디렉터리로 보관합니다. 파일당 기본 20MB 제한, 경로 문자 정규화, 중복 파일명 차단, staff/admin 권한 검사를 적용합니다. 메타데이터에는 파일명·크기·사업·오더·행 수·검증 건수가 포함됩니다.
 
 ## 다음 단계
 
-1. 원본 Excel 보관용 내부 파일 저장소 추가
+1. 원본 파일 다운로드·보존기간·백업 정책 추가
 2. 안전규정 문서·RAG 인덱스의 내부 저장 연결
 3. AI Agent의 내부 API/사내 LLM 연결
 4. 실제 Supabase 데이터 백업을 PostgreSQL로 이전
