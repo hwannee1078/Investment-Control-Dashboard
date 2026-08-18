@@ -4,6 +4,7 @@ import { createAuthenticatedSession } from './authStore'
 import { getUserRole } from './userStore'
 import { ensureCloudUserRole, getCloudUserRole } from '../../services/cloudSync'
 import { isSupabaseConfigured, supabase } from '../../services/supabaseClient'
+import { isOfflineMode, offlineApiBaseUrl } from '../../services/runtimeConfig'
 
 const AUTH_EMAIL_DOMAIN = '@investment.local'
 
@@ -27,7 +28,23 @@ export default function LoginPage() {
     setAuthError('')
     if (Object.keys(nextErrors).length > 0) return
     setIsSubmitting(true)
-    if (isSupabaseConfigured && supabase) {
+    if (isOfflineMode) {
+      try {
+        const response = await fetch(`${offlineApiBaseUrl}/login`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ employeeId: username.trim(), password }),
+        })
+        const payload = await response.json() as { token?: string; role?: 'viewer' | 'staff' | 'admin'; message?: string }
+        if (!response.ok || !payload.token || !payload.role) throw new Error(payload.message ?? '로그인에 실패했습니다.')
+        sessionStorage.setItem('investment-dashboard.offline-token', payload.token)
+        createAuthenticatedSession(payload.role)
+      } catch (error) {
+        setAuthError(error instanceof Error ? error.message : '로그인에 실패했습니다.')
+        setIsSubmitting(false)
+        return
+      }
+    } else if (isSupabaseConfigured && supabase) {
       if (registerMode) {
         const { data, error } = await supabase.auth.signUp({
           email: `${username.trim().toLowerCase()}${AUTH_EMAIL_DOMAIN}`,

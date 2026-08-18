@@ -1,0 +1,139 @@
+import { createServer } from 'node:http'
+import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
+import { promisify } from 'node:util'
+import pg from 'pg'
+
+const { Pool } = pg
+const scrypt = promisify(scryptCallback)
+const port = Number(process.env.PORT ?? 3000)
+const jwtSecret = process.env.JWT_SECRET
+if (!jwtSecret) throw new Error('JWT_SECRET is required')
+
+const pool = new Pool({
+  host: process.env.PGHOST ?? 'db',
+  port: Number(process.env.PGPORT ?? 5432),
+  database: process.env.POSTGRES_DB ?? 'investment',
+  user: process.env.POSTGRES_USER ?? 'investment_app',
+  password: process.env.POSTGRES_PASSWORD,
+})
+
+const seedUsers = [
+  { employeeId: '123456', password: '123456', role: 'viewer' },
+  { employeeId: '1111', password: '1111', role: 'staff' },
+  { employeeId: 'admin', password: 'admin', role: 'admin' },
+]
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString('hex')
+  const derived = await scrypt(password, salt, 64)
+  return `scrypt:${salt}:${Buffer.from(derived).toString('hex')}`
+}
+
+async function verifyPassword(password, encoded) {
+  const [, salt, expectedHex] = String(encoded).split(':')
+  if (!salt || !expectedHex) return false
+  const actual = Buffer.from(await scrypt(password, salt, 64))
+  const expected = Buffer.from(expectedHex, 'hex')
+  return actual.length === expected.length && timingSafeEqual(actual, expected)
+}
+
+function encodeToken(user) {
+  const payload = Buffer.from(JSON.stringify({ sub: user.id, employeeId: user.employee_id, role: user.role, exp: Date.now() + 8 * 60 * 60 * 1000 })).toString('base64url')
+  const signature = createHmac('sha256', jwtSecret).update(payload).digest('base64url')
+  return `${payload}.${signature}`
+}
+
+function decodeToken(request) {
+  const value = request.headers.authorization ?? ''
+  const token = value.startsWith('Bearer ') ? value.slice(7) : ''
+  const [payload, signature] = token.split('.')
+  if (!payload || !signature) return null
+  const expected = createHmac('sha256', jwtSecret).update(payload).digest('base64url')
+  if (signature !== expected) return null
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    return parsed.exp > Date.now() ? parsed : null
+  } catch { return null }
+}
+
+async function readJson(request) {
+  const chunks = []
+  for await (const chunk of request) chunks.push(chunk)
+  return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')
+}
+
+function send(response, status, body) {
+  response.writeHead(status, { 'content-type': 'application/json; charset=utf-8' })
+  response.end(JSON.stringify(body))
+}
+
+async function seed() {
+  for (const user of seedUsers) {
+    const passwordHash = await hashPassword(user.password)
+    await pool.query(
+      `insert into app_users (employee_id, password_hash, role)
+       values ($1, $2, $3)
+       on conflict (employee_id) do nothing`,
+      [user.employeeId, passwordHash, user.role],
+    )
+  }
+}
+
+async function listData() {
+  const [projects, transactions, mappings, finalizations] = await Promise.all([
+    pool.query('select id, data from projects order by id'),
+    pool.query('select source_id, row_id, data from investment_transactions order by source_id, row_id'),
+    pool.query('select order_id, project_id from order_mappings order by order_id'),
+    pool.query('select project_id, finalized from project_finalizations where finalized = true'),
+  ])
+  return {
+    projects: projects.rows.map((row) => row.data),
+    transactions: transactions.rows.map((row) => row.data),
+    mappings: Object.fromEntries(mappings.rows.map((row) => [row.order_id, row.project_id])),
+    finalizations: Object.fromEntries(finalizations.rows.map((row) => [row.project_id, row.finalized])),
+  }
+}
+
+async function syncData(body) {
+  const client = await pool.connect()
+  try {
+    await client.query('begin')
+    for (const data of body.projects ?? []) await client.query('insert into projects (id, data) values ($1, $2) on conflict (id) do update set data = excluded.data, updated_at = now()', [data.id, data])
+    for (const data of body.transactions ?? []) await client.query('insert into investment_transactions (source_id, row_id, data) values ($1, $2, $3) on conflict (source_id, row_id) do update set data = excluded.data, updated_at = now()', [data.sourceId, data.rowId, data])
+    for (const [orderId, projectId] of Object.entries(body.mappings ?? {})) await client.query('insert into order_mappings (order_id, project_id) values ($1, $2) on conflict (order_id) do update set project_id = excluded.project_id, updated_at = now()', [orderId, projectId])
+    for (const [projectId, finalized] of Object.entries(body.finalizations ?? {})) await client.query('insert into project_finalizations (project_id, finalized) values ($1, $2) on conflict (project_id) do update set finalized = excluded.finalized, updated_at = now()', [projectId, finalized])
+    await client.query('commit')
+  } catch (error) {
+    await client.query('rollback')
+    throw error
+  } finally { client.release() }
+}
+
+const server = createServer(async (request, response) => {
+  try {
+    const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`)
+    if (request.method === 'GET' && (url.pathname === '/healthz' || url.pathname === '/api/offline/healthz')) return send(response, 200, { ok: true })
+    if (request.method === 'POST' && url.pathname === '/api/offline/login') {
+      const body = await readJson(request)
+      const result = await pool.query('select id, employee_id, password_hash, role from app_users where employee_id = $1 and active = true', [String(body.employeeId ?? '')])
+      const user = result.rows[0]
+      if (!user || !(await verifyPassword(String(body.password ?? ''), user.password_hash))) return send(response, 401, { message: '사번 또는 비밀번호가 올바르지 않습니다.' })
+      return send(response, 200, { token: encodeToken(user), role: user.role })
+    }
+    const user = decodeToken(request)
+    if (!user) return send(response, 401, { message: '인증이 필요합니다.' })
+    if (request.method === 'GET' && url.pathname === '/api/offline/bootstrap') return send(response, 200, await listData())
+    if (request.method === 'POST' && url.pathname === '/api/offline/sync') {
+      if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '자료 수정 권한이 없습니다.' })
+      await syncData(await readJson(request))
+      return send(response, 204, {})
+    }
+    return send(response, 404, { message: 'Not found' })
+  } catch (error) {
+    console.error(error)
+    return send(response, 500, { message: '내부 API 오류가 발생했습니다.' })
+  }
+})
+
+await seed()
+server.listen(port, '0.0.0.0', () => console.log(`offline API listening on ${port}`))

@@ -9,6 +9,7 @@ import InvestmentImportPage from './features/import/InvestmentImportPage'
 import ProjectManagePage from './features/manage/ProjectManagePage'
 import ProjectDetailPage from './features/projects/ProjectDetailPage'
 import CloudSyncGate from './components/CloudSyncGate'
+import { isOfflineMode } from './services/runtimeConfig'
 import SafetyRegulationPage from './features/safety/SafetyRegulationPage'
 import AgentPage from './features/agent/AgentPage'
 import { isSupabaseConfigured } from './services/supabaseClient'
@@ -42,5 +43,5 @@ export default function App() {
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
-  return isSupabaseConfigured ? <CloudSyncGate>{routes}</CloudSyncGate> : routes
+  return isSupabaseConfigured || isOfflineMode ? <CloudSyncGate>{routes}</CloudSyncGate> : routes
 }

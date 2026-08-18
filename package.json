@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.1",
+    "pg": "^8.16.3",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",

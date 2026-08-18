@@ -4,6 +4,7 @@ dist
 .gitignore
 .vercel
 .superpowers
+.env*
 *.log
 *.pptx
 *.xlsx

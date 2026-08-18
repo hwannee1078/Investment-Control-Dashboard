@@ -6,6 +6,10 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+ARG VITE_DATA_BACKEND=online
+ARG VITE_OFFLINE_API_URL=/api/offline
+ENV VITE_DATA_BACKEND=$VITE_DATA_BACKEND
+ENV VITE_OFFLINE_API_URL=$VITE_OFFLINE_API_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
