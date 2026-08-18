@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.gitignore
+.vercel
+.superpowers
+*.log
+*.pptx
+*.xlsx
+*.xlsm
+docs
