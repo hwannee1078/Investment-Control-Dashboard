@@ -14,6 +14,18 @@
 
 ## 외부망 PC에서 이미지 준비
 
+가장 간단한 방법은 제공된 스크립트를 사용하는 것입니다.
+
+```powershell
+.\scripts\export-offline-bundle.ps1 -OutputDir .\offline-bundle
+```
+
+생성된 `offline-bundle` 폴더를 승인된 반입 절차로 운영 서버에 이동합니다.
+
+보안을 위해 번들에는 실제 `.env.offline`을 넣지 않고 `.env.offline.example`만 포함합니다. 운영 서버에서 예시 파일을 복사하고 `POSTGRES_PASSWORD`, `JWT_SECRET`을 별도로 입력하세요.
+
+수동으로 진행할 경우:
+
 ```powershell
 Copy-Item .env.offline.example .env.offline
 # .env.offline의 POSTGRES_PASSWORD를 긴 임의 값으로 변경
@@ -30,6 +42,14 @@ docker save \
 `postgres-16.4-alpine.tar`와 이 저장소의 소스/Compose 파일을 승인된 반입 절차로 운영 서버에 이동합니다.
 
 ## 외부망 차단 서버에서 실행
+
+```powershell
+.\scripts\import-offline-bundle.ps1 -BundleDir .\offline-bundle
+```
+
+처음 실행하면 `.env.offline.example`에서 `.env.offline`을 만들고 중단합니다. 생성된 `.env.offline`에 운영 비밀값을 입력한 후 같은 명령을 한 번 더 실행하세요.
+
+수동으로 진행할 경우:
 
 ```powershell
 docker load -i postgres-16.4-alpine.tar
