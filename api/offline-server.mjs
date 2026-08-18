@@ -109,6 +109,52 @@ async function syncData(body) {
   } finally { client.release() }
 }
 
+async function safetyAnswer(question) {
+  const terms = Array.from(new Set(String(question).split(/[^\p{L}\p{N}]+/u).filter((term) => term.length >= 2))).slice(0, 8)
+  if (terms.length === 0) terms.push(String(question).slice(0, 120))
+  const patterns = terms.map((term) => `%${term}%`)
+  const result = await pool.query(
+    `select d.id as document_id, d.title, d.source_group, d.source_name, d.url, d.source_date,
+            c.section, c.page, c.content, c.keywords
+       from safety_documents d
+       join safety_document_chunks c on c.document_id = d.id
+      where d.status = 'approved'
+      order by d.source_date desc nulls last`,
+    [],
+  )
+  let rows = result.rows.filter((row) => {
+    const haystack = `${row.content} ${(row.keywords ?? []).join(' ')}`
+    return terms.some((term) => haystack.includes(term))
+  }).slice(0, 3)
+  if (rows.length === 0) {
+    const text = String(question)
+    const fallbackIds = text.includes('화학') || text.includes('보호구')
+      ? new Set(['kosha-chemical-guide'])
+      : text.includes('위험성평가') || text.includes('위험성')
+        ? new Set(['law-occupational-safety', 'ministry-risk-assessment'])
+        : new Set()
+    rows = result.rows.filter((row) => fallbackIds.has(row.document_id)).slice(0, 3)
+  }
+  if (rows.length === 0) {
+    return {
+      question,
+      answer: '현재 오프라인 승인 문서에서 질문과 일치하는 근거를 찾지 못했습니다. 안전·법무 담당자에게 최신 기준을 확인해 주세요.',
+      intent: 'safety-search',
+      hasEvidence: false,
+      citations: [],
+      evidence: [],
+    }
+  }
+  return {
+    question,
+    answer: `승인된 공식 문서에서 확인된 내용입니다.\n\n${rows.map((row) => row.content).join('\n\n')}\n\n실제 적용 전에는 원문과 최신 개정 여부를 확인하세요.`,
+    intent: 'safety-search',
+    hasEvidence: true,
+    evidence: rows.map((row) => ({ content: row.content, section: row.section, page: row.page })),
+    citations: rows.map((row) => ({ documentId: row.document_id, title: row.title, sourceGroup: row.source_group, sourceName: row.source_name, section: row.section, page: row.page, sourceDate: row.source_date, url: row.url, status: 'approved' })),
+  }
+}
+
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`)
@@ -123,6 +169,12 @@ const server = createServer(async (request, response) => {
     const user = decodeToken(request)
     if (!user) return send(response, 401, { message: '인증이 필요합니다.' })
     if (request.method === 'GET' && url.pathname === '/api/offline/bootstrap') return send(response, 200, await listData())
+    if (request.method === 'POST' && url.pathname === '/api/offline/agent') {
+      const body = await readJson(request)
+      const question = [...(body.conversation ?? [])].reverse().find((message) => message?.role === 'user')?.content
+      if (typeof question !== 'string' || !question.trim()) return send(response, 400, { message: '질문이 필요합니다.' })
+      return send(response, 200, { message: await safetyAnswer(question), toolTrace: [{ name: 'safetySearch', status: 'ok' }] })
+    }
     if (request.method === 'POST' && url.pathname === '/api/offline/sync') {
       if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '자료 수정 권한이 없습니다.' })
       await syncData(await readJson(request))

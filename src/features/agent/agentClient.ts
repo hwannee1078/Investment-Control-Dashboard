@@ -1,7 +1,9 @@
 import { isSupabaseConfigured, supabase } from '../../services/supabaseClient'
 import type { AgentRequest, AgentResponse } from './agentGateway'
+import { isOfflineMode, offlineApiBaseUrl, offlineAuthHeaders } from '../../services/runtimeConfig'
 
 async function apiHeaders(): Promise<HeadersInit> {
+  if (isOfflineMode) return { 'content-type': 'application/json', ...offlineAuthHeaders() }
   if (!isSupabaseConfigured || !supabase) return { 'content-type': 'application/json' }
   const { data } = await supabase.auth.getSession()
   return {
@@ -11,7 +13,8 @@ async function apiHeaders(): Promise<HeadersInit> {
 }
 
 export async function requestAgent(payload: AgentRequest): Promise<AgentResponse> {
-  const response = await fetch('/api/agent', {
+  const endpoint = isOfflineMode ? `${offlineApiBaseUrl}/agent` : '/api/agent'
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: await apiHeaders(),
     body: JSON.stringify(payload),
