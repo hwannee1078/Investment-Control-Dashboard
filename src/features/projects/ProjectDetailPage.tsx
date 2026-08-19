@@ -5,6 +5,8 @@ import { ProjectRepository } from '../../data/projectRepository'
 import type { InvestmentSummary as InvestmentSummaryValue } from '../../domain/investment'
 import { aggregateInvestment } from '../../services/investmentAggregation'
 import ScheduleMatrix from './ScheduleMatrix'
+import ProjectDetailTour, { ProjectDetailTourRestart } from './ProjectDetailTour'
+import { getSessionRole } from '../auth/authStore'
 
 const currency = new Intl.NumberFormat('ko-KR')
 const EMPTY_SUMMARY: InvestmentSummaryValue = { monthly: {}, cumulative: {}, cumulativeTotal: 0, executionRate: null }
@@ -24,6 +26,7 @@ export default function ProjectDetailPage() {
   if (!detail) return <main className="page-shell empty-page"><h1>사업을 찾을 수 없습니다.</h1><Link to="/dashboard">대시보드로 돌아가기</Link></main>
 
   const { project, summary } = detail
+  const executiveView = getSessionRole() === 'viewer'
   const months = [...new Set([...Object.keys(summary.monthly), ...Object.keys(project.rollingPlan ?? {})])].sort()
   const years = [...new Set(months.map((month) => Number(month.slice(0, 4))))].sort()
   const currentYear = new Date().getFullYear()
@@ -41,14 +44,15 @@ export default function ProjectDetailPage() {
 
   return <main className="page-shell">
     <Link className="back-link" to="/dashboard">← 대시보드</Link>
-    <header className="project-heading"><div><p className="eyebrow">Project Detail</p><h1>{project.name}</h1></div><span className="status-badge">{project.status}</span></header>
-    <section className="detail-panel" aria-labelledby="basic-info-title"><h2 id="basic-info-title">사업 기본 정보</h2><dl className="project-facts"><div><dt>소재</dt><dd>{project.material}</dd></div><div><dt>지역</dt><dd>{project.location}</dd></div><div><dt>현재 단계</dt><dd>{project.status}</dd></div><div className="project-facts__investment"><dt>승인투자비</dt><dd>{project.approvalBudget === null ? '-' : `${currency.format(project.approvalBudget)}원`}</dd><small>누적투자비 {currency.format(summary.cumulativeTotal)}원 · 집행률 {summary.executionRate === null ? '-' : `${summary.executionRate.toFixed(1)}%`}</small></div></dl></section>
-    <section className="detail-panel" aria-labelledby="schedule-title"><h2 id="schedule-title">주요 일정</h2><ScheduleMatrix project={project} editable={false} /></section>
-    <section className="detail-panel rolling-chart-panel" aria-labelledby="rolling-chart-title"><h2 id="rolling-chart-title">분기별 Rolling Plan 비교</h2>
+    <header className="project-heading"><div><p className="eyebrow">Project Detail</p><h1>{project.name}</h1></div><div className="page-heading-actions"><span className="status-badge">{project.status}</span><ProjectDetailTourRestart enabled={executiveView} /></div></header>
+    <section className="detail-panel" data-detail-tour="basic" aria-labelledby="basic-info-title"><h2 id="basic-info-title">사업 기본 정보</h2><dl className="project-facts"><div><dt>소재</dt><dd>{project.material}</dd></div><div><dt>지역</dt><dd>{project.location}</dd></div><div><dt>현재 단계</dt><dd>{project.status}</dd></div><div className="project-facts__investment" data-detail-tour="investment"><dt>승인투자비</dt><dd>{project.approvalBudget === null ? '-' : `${currency.format(project.approvalBudget)}원`}</dd><small>누적투자비 {currency.format(summary.cumulativeTotal)}원 · 집행률 {summary.executionRate === null ? '-' : `${summary.executionRate.toFixed(1)}%`}</small></div></dl></section>
+    <section className="detail-panel" data-detail-tour="schedule" aria-labelledby="schedule-title"><h2 id="schedule-title">주요 일정</h2><ScheduleMatrix project={project} editable={false} /></section>
+    <section className="detail-panel rolling-chart-panel" data-detail-tour="rolling" aria-labelledby="rolling-chart-title"><h2 id="rolling-chart-title">분기별 Rolling Plan 비교</h2>
       {years.length === 0 ? <p className="empty-state">등록된 Rolling Plan 또는 실적이 없습니다.</p> : years.map((year) => <section key={year} className="rolling-year" aria-label={`${year}년 Rolling Plan`}><h3>{year}년</h3><div className="rolling-chart" role="group" aria-label={`${year}년 분기별 계획·실적 투자비 비교`}>
-        {[1, 2, 3, 4].map((quarter) => { const quarterMonths = monthsForQuarter(year, quarter); const plan = sum(quarterMonths); const actual = sum(quarterMonths, true); const max = Math.max(1, ...[1, 2, 3, 4].map((q) => Math.max(Math.abs(sum(monthsForQuarter(year, q))), Math.abs(sum(monthsForQuarter(year, q), true))))); const key = `${year}-Q${quarter}`; return <button key={key} type="button" className="rolling-bar-group" aria-label={`${year}년 ${quarter}분기`} onClick={() => { setSelectedQuarter(key); setSelectedMonth(null) }}><span className="rolling-month">{quarter}분기</span><span className="rolling-bars"><i className="rolling-bar rolling-bar--plan" style={{ height: `${Math.max(2, Math.abs(plan) / max * 100)}%` }} /><i className="rolling-bar rolling-bar--actual" style={{ height: `${Math.max(2, Math.abs(actual) / max * 100)}%` }} /></span><small>계획 {Math.round(plan / 100000000)} / 실적 {Math.round(actual / 100000000)}억원</small></button> })}
+        {[1, 2, 3, 4].map((quarter) => { const quarterMonths = monthsForQuarter(year, quarter); const plan = sum(quarterMonths); const actual = sum(quarterMonths, true); const max = Math.max(1, ...[1, 2, 3, 4].map((q) => Math.max(Math.abs(sum(monthsForQuarter(year, q))), Math.abs(sum(monthsForQuarter(year, q), true))))); const key = `${year}-Q${quarter}`; return <button key={key} data-detail-tour="rolling-quarter" type="button" className="rolling-bar-group" aria-label={`${year}년 ${quarter}분기`} onClick={() => { setSelectedQuarter(key); setSelectedMonth(null) }}><span className="rolling-month">{quarter}분기</span><span className="rolling-bars"><i className="rolling-bar rolling-bar--plan" style={{ height: `${Math.max(2, Math.abs(plan) / max * 100)}%` }} /><i className="rolling-bar rolling-bar--actual" style={{ height: `${Math.max(2, Math.abs(actual) / max * 100)}%` }} /></span><small>계획 {Math.round(plan / 100000000)} / 실적 {Math.round(actual / 100000000)}억원</small></button> })}
       </div>{selectedQuarter?.startsWith(`${year}-`) ? monthDetail(selectedQuarter) : null}</section>)}
       {selectedMonth ? <p className="rolling-reason"><strong>{selectedMonth} 차이 사유:</strong> {project.rollingPlan?.[selectedMonth]?.reason ?? '입력된 사유가 없습니다.'}</p> : null}
     </section>
+    <ProjectDetailTour enabled={executiveView} />
   </main>
 }
