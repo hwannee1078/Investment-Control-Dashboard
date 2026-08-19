@@ -53,7 +53,7 @@ export default function DashboardPage() {
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Portfolio Mix</p>
-            <h2 id="material-title">소재별 사업현황</h2>
+            <h2 id="material-title">소재별 사업현황 <DashboardHelp text="양극재·음극재 사업 수를 보여줍니다. 소재에 마우스를 올리면 해당 사업 목록이 나타납니다." /></h2>
           </div>
           <p>
             {hoveredMaterial
@@ -78,7 +78,7 @@ export default function DashboardPage() {
             <p className="eyebrow">Business Portfolio</p>
             <h2 id="business-list-title">사업목록</h2>
           </div>
-          <p>사업관리에서 입력한 일정과 투자비 현황을 확인합니다.</p>
+          <p>사업관리에서 입력한 일정과 투자비 현황을 확인합니다. <DashboardHelp text="계획과 실적 날짜를 비교하고, 실적 날짜에 마우스를 올리면 작성된 지연·단축 사유를 확인할 수 있습니다." /></p>
         </div>
         <div className="table-scroll">
           <table className="business-list-table">
@@ -147,7 +147,11 @@ export default function DashboardPage() {
 }
 
 function InvestmentBarChart({ projects, summaries }: { projects: Project[]; summaries: Map<string, InvestmentSummary> }) {
-  return <section className="investment-bar-chart" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황</h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; const cumulativeWidth = approval > 0 ? Math.min(100, Math.abs(cumulative) / approval * 100) : 0; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulativeWidth}%` }} /><i className="investment-bar investment-bar--approval" style={{ width: approval > 0 ? '100%' : '0%' }} /></div><div className="investment-bar-values"><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><span><i className="legend-dot legend-dot--approval" />승인투자비</span><strong>누적률</strong></div></section>
+  return <section className="investment-bar-chart" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황 <DashboardHelp text="승인투자비를 100% 기준으로 두고 누적투자비가 얼마나 집행됐는지 비교합니다. 오른쪽 수치는 누적률입니다." /></h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; const cumulativeWidth = approval > 0 ? Math.min(100, Math.abs(cumulative) / approval * 100) : 0; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulativeWidth}%` }} /><i className="investment-bar investment-bar--approval" style={{ width: approval > 0 ? '100%' : '0%' }} /></div><div className="investment-bar-values"><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><span><i className="legend-dot legend-dot--approval" />승인투자비</span><strong>누적률</strong></div></section>
+}
+
+function DashboardHelp({ text }: { text: string }) {
+  return <span className="dashboard-help" tabIndex={0} aria-label={`설명: ${text}`}><span className="dashboard-help__icon" aria-hidden="true">?</span><span className="dashboard-help__box" role="tooltip">{text}</span></span>
 }
 
 function InvestmentSummaryCell({

@@ -19,7 +19,6 @@ export default function AppLayout() {
           {canManage(role) ? <NavLink to="/import">투자비 가져오기</NavLink> : null}
           <NavLink to="/safety">안전규정</NavLink>
           <NavLink to="/agent">AI Agent</NavLink>
-          <NavLink to="/guide">이용 안내</NavLink>
         </nav>
       </header>
       <FloatingSafetyChatbot />

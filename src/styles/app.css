@@ -171,6 +171,64 @@ a {
   line-height: 1.7;
 }
 
+.dashboard-help {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 5px;
+  outline: none;
+}
+
+.dashboard-help__icon {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid #7da7b7;
+  border-radius: 50%;
+  color: #17697b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: help;
+}
+
+.dashboard-help__box {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 12px);
+  left: 0;
+  display: none;
+  width: min(320px, 72vw);
+  padding: 12px 14px;
+  border: 1px solid #b9d6e0;
+  border-radius: 10px;
+  color: #23435a;
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(22 57 80 / 18%);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.dashboard-help__box::before {
+  position: absolute;
+  top: -7px;
+  left: 13px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid #b9d6e0;
+  border-left: 1px solid #b9d6e0;
+  background: #fff;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.dashboard-help:hover .dashboard-help__box,
+.dashboard-help:focus .dashboard-help__box,
+.dashboard-help:focus-within .dashboard-help__box {
+  display: block;
+}
+
 @media (max-width: 760px) {
   .guide-grid { grid-template-columns: 1fr; }
 }
