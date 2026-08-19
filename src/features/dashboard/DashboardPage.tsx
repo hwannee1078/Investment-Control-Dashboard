@@ -9,6 +9,8 @@ import { SAMPLE_INVESTMENT_TRANSACTIONS } from '../../domain/sampleData'
 import { PROJECT_STAGES } from '../../domain/project'
 import { aggregateInvestment } from '../../services/investmentAggregation'
 import MaterialDonut from './MaterialDonut'
+import ExecutiveTour, { ExecutiveTourRestart } from './ExecutiveTour'
+import { getSessionRole } from '../auth/authStore'
 
 type Material = Project['material']
 
@@ -16,6 +18,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [hoveredMaterial, setHoveredMaterial] = useState<Material | null>(null)
+  const executiveView = getSessionRole() === 'viewer'
   const sampleMode = new URLSearchParams(location.search).get('sample') === '1'
   const dashboard = useMemo(() => {
     const projects = new ProjectRepository().list().filter((project) => project.active !== false)
@@ -40,16 +43,17 @@ export default function DashboardPage() {
   }
 
   return (
+    <>
     <main className="page-shell">
       <header className="page-heading">
         <div>
           <p className="eyebrow">Executive Overview</p>
           <h1 id="dashboard-title">투자비 대시보드</h1>
         </div>
-        <p>전체 사업의 일정과 투자 현황을 한눈에 확인합니다.</p>
+        <div className="page-heading-actions"><p>전체 사업의 일정과 투자 현황을 한눈에 확인합니다.</p><ExecutiveTourRestart enabled={executiveView} /></div>
       </header>
 
-      <section className="dashboard-panel" aria-labelledby="material-title">
+      <section className="dashboard-panel" data-tour-target="materials" aria-labelledby="material-title">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Portfolio Mix</p>
@@ -72,7 +76,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="dashboard-panel business-list-panel" aria-labelledby="business-list-title">
+      <section className="dashboard-panel business-list-panel" data-tour-target="business-list" aria-labelledby="business-list-title">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Business Portfolio</p>
@@ -99,6 +103,7 @@ export default function DashboardPage() {
                   <th scope="row" rowSpan={2}>
                     <button
                       className="project-link"
+                      data-tour-target="project-link"
                       type="button"
                       onClick={() => navigate(`/projects/${project.id}`)}
                     >
@@ -122,6 +127,7 @@ export default function DashboardPage() {
                           reason ? (
                             <span
                               className="actual-date-with-reason"
+                              data-tour-target="schedule-reason"
                               tabIndex={0}
                               data-tooltip={reason}
                               aria-label={`${schedule.actual}, 실적 사유: ${reason}`}
@@ -143,11 +149,13 @@ export default function DashboardPage() {
         </div>
       </section>
     </main>
+    <ExecutiveTour enabled={executiveView} />
+    </>
   )
 }
 
 function InvestmentBarChart({ projects, summaries }: { projects: Project[]; summaries: Map<string, InvestmentSummary> }) {
-  return <section className="investment-bar-chart" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황 <DashboardHelp text="승인투자비를 100% 기준으로 두고 누적투자비가 얼마나 집행됐는지 비교합니다. 오른쪽 수치는 누적률입니다." /></h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; const cumulativeWidth = approval > 0 ? Math.min(100, Math.abs(cumulative) / approval * 100) : 0; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulativeWidth}%` }} /><i className="investment-bar investment-bar--approval" style={{ width: approval > 0 ? '100%' : '0%' }} /></div><div className="investment-bar-values"><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><span><i className="legend-dot legend-dot--approval" />승인투자비</span><strong>누적률</strong></div></section>
+  return <section className="investment-bar-chart" data-tour-target="investment" aria-labelledby="investment-bar-chart-title"><div className="panel-heading"><div><p className="eyebrow">Investment Overview</p><h3 id="investment-bar-chart-title">사업별 투자비 현황 <DashboardHelp text="승인투자비를 100% 기준으로 두고 누적투자비가 얼마나 집행됐는지 비교합니다. 오른쪽 수치는 누적률입니다." /></h3></div><small>단위: 억원</small></div><div className="investment-bar-list">{projects.map((project) => { const approval = project.approvalBudget ?? 0; const cumulative = summaries.get(project.id)?.cumulativeTotal ?? 0; const rate = approval > 0 ? cumulative / approval * 100 : null; const cumulativeWidth = approval > 0 ? Math.min(100, Math.abs(cumulative) / approval * 100) : 0; return <div className="investment-bar-row" key={project.id}><div className="investment-bar-label">{project.name}<span>{rate === null ? '-' : `${rate.toFixed(1)}%`}</span></div><div className="investment-bar-track"><i className="investment-bar investment-bar--cumulative" style={{ width: `${cumulativeWidth}%` }} /><i className="investment-bar investment-bar--approval" style={{ width: approval > 0 ? '100%' : '0%' }} /></div><div className="investment-bar-values"><span>누적 {Math.round(cumulative / 100000000).toLocaleString()}</span><span>승인 {Math.round(approval / 100000000).toLocaleString()}</span></div></div>})}</div><div className="investment-bar-legend"><span><i className="legend-dot legend-dot--cumulative" />누적투자비</span><span><i className="legend-dot legend-dot--approval" />승인투자비</span><strong>누적률</strong></div></section>
 }
 
 function DashboardHelp({ text }: { text: string }) {

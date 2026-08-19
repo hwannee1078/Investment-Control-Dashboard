@@ -171,6 +171,68 @@ a {
   line-height: 1.7;
 }
 
+.page-heading-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  text-align: right;
+}
+
+.dashboard-guide-button {
+  padding: 7px 12px;
+  border: 1px solid #9ac8d0;
+  border-radius: 999px;
+  color: #17697b;
+  background: #f4fbfc;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.executive-tour {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  pointer-events: none;
+}
+
+.executive-tour::before {
+  position: absolute;
+  inset: 0;
+  background: rgb(6 25 45 / 58%);
+  content: '';
+}
+
+.executive-tour__spotlight {
+  position: fixed;
+  z-index: 101;
+  border: 3px solid #70cfce;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgb(6 25 45 / 58%), 0 0 0 6px rgb(112 207 206 / 18%);
+  pointer-events: none;
+}
+
+.executive-tour__card {
+  position: fixed;
+  z-index: 102;
+  width: min(350px, calc(100vw - 36px));
+  padding: 22px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgb(0 11 25 / 34%);
+  pointer-events: auto;
+}
+
+.executive-tour__card h2 { margin: 0 0 9px; color: #0a3155; font-size: 1.15rem; }
+.executive-tour__card > p:not(.eyebrow) { margin: 0; color: #53667b; line-height: 1.65; }
+.executive-tour__actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+.executive-tour__actions .primary-button { margin-top: 0; padding: 9px 14px; }
+
+@media (max-width: 760px) {
+  .page-heading-actions { justify-items: start; text-align: left; }
+  .executive-tour__card { top: auto !important; right: 18px; bottom: 18px; left: 18px !important; width: auto; }
+}
+
 .dashboard-help {
   position: relative;
   display: inline-flex;
