@@ -217,7 +217,10 @@ async function investmentAnswer(question) {
   }
   const text = String(question)
   const target = projects.find((project) => text.includes(project.name))
-  const targets = target ? [target] : projects
+  if (target && !totals.has(target.id)) {
+    return { question, answer: '[NO_EVIDENCE] 요청한 사업의 승인된 투자비 실적을 찾지 못했습니다. 사업명과 업로드 상태를 확인해 주세요.', intent: 'investment-analysis', hasEvidence: false, citations: [], evidence: [] }
+  }
+  const targets = (target ? [target] : projects).filter((project) => totals.has(project.id))
   const format = (value) => new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 2 }).format(value)
   const lines = targets.map((project) => {
     const summary = totals.get(project.id) ?? { total: 0, monthly: {}, orders: {} }
@@ -228,7 +231,7 @@ async function investmentAnswer(question) {
     const monthlyText = month ? ` ${month} 실적 ${format(summary.monthly[month] ?? 0)}원.` : ''
     return `${project.name}: 승인투자비 ${format(budget)}원, 누적투자비 ${format(summary.total)}원, 집행률 ${rate}.${monthlyText}`
   })
-  if (targets.length === 0) return { question, answer: '조회할 사업 데이터가 없습니다.', intent: 'investment-analysis', hasEvidence: false, citations: [], evidence: [] }
+  if (targets.length === 0) return { question, answer: '[NO_EVIDENCE] 승인된 투자비 데이터가 없어 추정해서 답변할 수 없습니다.', intent: 'investment-analysis', hasEvidence: false, citations: [], evidence: [] }
   return {
     question,
     answer: `${lines.join('\n')}\n\n계산 기준: 승인된 사업과 매핑된 투자오더만 포함하고, 동일 sourceId·rowId는 중복 제거했습니다.`,
