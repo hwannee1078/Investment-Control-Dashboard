@@ -192,6 +192,53 @@ async function safetyAnswer(question) {
   }
 }
 
+async function investmentAnswer(question) {
+  const [projectResult, transactionResult, mappingResult] = await Promise.all([
+    pool.query('select data from projects order by id'),
+    pool.query('select source_id, row_id, data from investment_transactions'),
+    pool.query('select order_id, project_id from order_mappings'),
+  ])
+  const projects = projectResult.rows.map(({ data }) => data).filter((project) => project?.active !== false)
+  const projectById = new Map(projects.map((project) => [project.id, project]))
+  const orderToProject = Object.fromEntries(mappingResult.rows.map((row) => [row.order_id, row.project_id]))
+  const seen = new Set()
+  const totals = new Map()
+  for (const row of transactionResult.rows) {
+    const data = row.data
+    const identity = `${row.source_id}\u0000${row.row_id}`
+    const projectId = orderToProject[data.orderId]
+    if (seen.has(identity) || !projectById.has(projectId)) continue
+    seen.add(identity)
+    const current = totals.get(projectId) ?? { total: 0, monthly: {}, orders: {} }
+    current.total += Number(data.amount) || 0
+    current.monthly[data.month] = (current.monthly[data.month] ?? 0) + (Number(data.amount) || 0)
+    current.orders[data.orderId] = (current.orders[data.orderId] ?? 0) + (Number(data.amount) || 0)
+    totals.set(projectId, current)
+  }
+  const text = String(question)
+  const target = projects.find((project) => text.includes(project.name))
+  const targets = target ? [target] : projects
+  const format = (value) => new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 2 }).format(value)
+  const lines = targets.map((project) => {
+    const summary = totals.get(project.id) ?? { total: 0, monthly: {}, orders: {} }
+    const budget = Number(project.approvalBudget) || 0
+    const rate = budget > 0 ? `${((summary.total / budget) * 100).toFixed(1)}%` : '산정 불가'
+    const monthMatch = /(20\d{2}-\d{1,2})/.exec(text)
+    const month = monthMatch?.[1]
+    const monthlyText = month ? ` ${month} 실적 ${format(summary.monthly[month] ?? 0)}원.` : ''
+    return `${project.name}: 승인투자비 ${format(budget)}원, 누적투자비 ${format(summary.total)}원, 집행률 ${rate}.${monthlyText}`
+  })
+  if (targets.length === 0) return { question, answer: '조회할 사업 데이터가 없습니다.', intent: 'investment-analysis', hasEvidence: false, citations: [], evidence: [] }
+  return {
+    question,
+    answer: `${lines.join('\n')}\n\n계산 기준: 승인된 사업과 매핑된 투자오더만 포함하고, 동일 sourceId·rowId는 중복 제거했습니다.`,
+    intent: 'investment-analysis',
+    hasEvidence: true,
+    evidence: targets.map((project) => ({ label: `${project.name} 투자비`, value: lines.find((line) => line.startsWith(`${project.name}:`)) ?? '', source: '오프라인 투자비 저장 데이터' })),
+    citations: [{ title: '투자비 대시보드 저장 데이터', url: 'local://investment-dashboard' }],
+  }
+}
+
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`)
@@ -210,7 +257,11 @@ const server = createServer(async (request, response) => {
       const body = await readJson(request)
       const question = [...(body.conversation ?? [])].reverse().find((message) => message?.role === 'user')?.content
       if (typeof question !== 'string' || !question.trim()) return send(response, 400, { message: '질문이 필요합니다.' })
-      return send(response, 200, { message: await safetyAnswer(question), toolTrace: [{ name: 'safetySearch', status: 'ok' }] })
+      const isInvestmentQuestion = /투자비|누적|승인투자비|집행률|투자오더|오더번호|투자예산|실적/.test(question)
+      return send(response, 200, {
+        message: await (isInvestmentQuestion ? investmentAnswer(question) : safetyAnswer(question)),
+        toolTrace: [{ name: isInvestmentQuestion ? 'investmentAnalysis' : 'safetySearch', status: 'ok' }],
+      })
     }
     if (request.method === 'POST' && url.pathname === '/api/offline/import-files') {
       if (!['staff', 'admin'].includes(user.role)) return send(response, 403, { message: '원본 파일 보관 권한이 없습니다.' })

@@ -84,6 +84,7 @@ Get-Content .\investment.dump -Raw -Encoding Byte | `
 - `POST /api/offline/sync`: 실무담당자·관리자의 변경사항 저장
 - `POST /api/offline/import-files`: 실무담당자·관리자의 원본 Excel 보관
 - `GET /api/offline/import-files/{batchId}/{fileName}`: 실무담당자·관리자의 원본 Excel 다운로드
+- `POST /api/offline/agent`: 안전규정 또는 투자비 질의응답 자동 분기
 - `GET /api/offline/healthz`: 내부 API 상태 확인
 
 ## 오프라인 투자비 업로드 현재 동작
@@ -96,7 +97,7 @@ Get-Content .\investment.dump -Raw -Encoding Byte | `
 
 ## 다음 단계
 
-1. 원본 파일 다운로드·보존기간·백업 정책 추가
+1. 원본 파일 보존기간·백업 정책 추가
 2. 안전규정 문서·RAG 인덱스의 내부 저장 연결
 3. AI Agent의 내부 API/사내 LLM 연결
 4. 실제 Supabase 데이터 백업을 PostgreSQL로 이전
